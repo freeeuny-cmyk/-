@@ -1,0 +1,88 @@
+import http.server
+import socketserver
+import urllib.request
+import urllib.parse
+import os
+import sys
+
+PORT = 8000
+DIRECTORY = "public"
+
+class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        # In Python 3.7+, SimpleHTTPRequestHandler accepts directory argument
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+    def end_headers(self):
+        # Enable CORS headers for development/canvas capture
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
+    def do_GET(self):
+        parsed_url = urllib.parse.urlparse(self.path)
+        if parsed_url.path == '/api/tts':
+            query = urllib.parse.parse_qs(parsed_url.query)
+            text = query.get('text', [''])[0]
+            if text:
+                try:
+                    # Google TTS URL
+                    url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q={urllib.parse.quote(text)}"
+                    req = urllib.request.Request(
+                        url,
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                    )
+                    with urllib.request.urlopen(req) as response:
+                        data = response.read()
+                        
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'audio/mpeg')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(data)
+                except Exception as e:
+                    self.send_response(500)
+                    self.end_headers()
+                    self.wfile.write(f"Error fetching TTS: {str(e)}".encode('utf-8'))
+            else:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"Missing 'text' parameter")
+        else:
+            # Handle default routing
+            cleaned_path = parsed_url.path.strip("/")
+            if not cleaned_path or cleaned_path == "":
+                self.path = "/index.html"
+            
+            # If requesting a file, verify it exists under public
+            target_file = os.path.join(DIRECTORY, self.path.lstrip("/"))
+            if not os.path.exists(target_file) and not os.path.isdir(target_file):
+                # Fallback to index.html for SPA if not found, but since it's simple, standard 404 is fine.
+                pass
+            super().do_GET()
+
+if __name__ == "__main__":
+    # Ensure public directory exists
+    if not os.path.exists(DIRECTORY):
+        os.makedirs(DIRECTORY)
+
+    # Clean up standard handler messages to avoid cluttering
+    # Set server to run
+    handler = CustomHTTPRequestHandler
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("", PORT), handler) as httpd:
+        print(f"==================================================")
+        print(f"  GBAN Shorts Creator Server is running!")
+        print(f"  Open your browser: http://localhost:{PORT}")
+        print(f"  Press Ctrl+C to stop the server.")
+        print(f"==================================================")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nStopping server...")
+            sys.exit(0)

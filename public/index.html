@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>경북농업기술원 - AI 숏츠 자동 생성기</title>
+    <!-- Google Fonts: Outfit & Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <i class="fa-solid fa-leaf leaf-icon"></i>
+                <div class="logo-text">
+                    <span class="logo-sub">경상북도농업기술원</span>
+                    <span class="logo-main">농업혁신 AI 숏츠 제작기</span>
+                </div>
+            </div>
+            <div class="header-badge">AI Data Project</div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Left Panel: Input & Control -->
+            <section class="control-panel">
+                <div class="panel-card">
+                    <h2 class="card-title"><i class="fa-solid fa-image icon"></i> 1. 사진 첨부 (3~4장)</h2>
+                    <p class="card-desc">숏츠에 들어갈 사진을 드래그하거나 클릭하여 업로드하세요. (순서 드래그 변경 가능)</p>
+                    
+                    <!-- Drag & Drop Zone -->
+                    <div class="upload-zone" id="upload-zone">
+                        <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <p class="upload-text">사진 파일을 여기에 끌어다 놓거나 <span>클릭하세요</span></p>
+                        <p class="upload-info">최소 3장에서 최대 6장까지 권장</p>
+                    </div>
+
+                    <!-- Image Preview List -->
+                    <div class="preview-list" id="preview-list">
+                        <!-- Preview items will be dynamically added here -->
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h2 class="card-title"><i class="fa-solid fa-file-lines icon"></i> 2. 대본 및 자막 입력</h2>
+                    <p class="card-desc">숏츠 영상과 함께 음성으로 읽어줄 대본을 작성하세요. 문장별로 줄바꿈하면 각 사진에 순서대로 자막이 매칭됩니다.</p>
+                    <textarea id="script-input" placeholder="여기에 대본을 작성해 주세요.&#10;예시:&#10;오늘 경상북도농업기술원 연구실을 소개합니다. (첫 번째 사진에 매칭)&#10;우리는 스마트 팜 기술로 딸기의 최적 생육 환경을 구축했습니다. (두 번째 사진에 매칭)&#10;더 신선하고 맛있는 경북 딸기, 기대해 주세요! (세 번째 사진에 매칭)"></textarea>
+                    
+                    <div class="script-meta">
+                        <span id="char-count">0자</span>
+                        <span class="helper-text">* 마침표(.)나 엔터(줄바꿈)를 기준으로 자막이 분할됩니다.</span>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <h2 class="card-title"><i class="fa-solid fa-music icon"></i> 3. 배경 음악 & 음성 설정</h2>
+                    
+                    <!-- Audio Settings Grid -->
+                    <div class="audio-settings">
+                        <div class="setting-group">
+                            <label for="bgm-select">배경 음악 (BGM)</label>
+                            <select id="bgm-select">
+                                <option value="none">음악 없음 (목소리만)</option>
+                                <option value="ambient" selected>농촌의 아침 (잔잔하고 맑은 분위기)</option>
+                                <option value="upbeat">활기찬 미래 농업 (신나고 밝은 비트)</option>
+                                <option value="custom">직접 음악 파일 업로드 (.mp3, .wav)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="setting-group" id="custom-bgm-container" style="display: none;">
+                            <label for="custom-bgm-input">내 컴퓨터에서 BGM 선택</label>
+                            <input type="file" id="custom-bgm-input" accept="audio/*">
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="bgm-volume">배경 음악 볼륨 (BGM)</label>
+                            <div class="range-slider">
+                                <input type="range" id="bgm-volume" min="0" max="0.5" step="0.05" value="0.15">
+                                <span class="range-val">15%</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="voice-speed">음성 재생 속도 (TTS)</label>
+                            <div class="range-slider">
+                                <input type="range" id="voice-speed" min="0.8" max="1.3" step="0.05" value="1.0">
+                                <span class="range-val">1.0x</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="btn-generate">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 숏츠 동영상 제작하기
+                </button>
+            </section>
+
+            <!-- Right Panel: Device Simulator -->
+            <section class="preview-panel">
+                <div class="device-wrapper">
+                    <!-- Phone Simulator Grid -->
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <!-- Overlay Video/Canvas Container -->
+                            <div class="video-container" id="video-container">
+                                <!-- Real-time Canvas Rendering -->
+                                <canvas id="shorts-canvas" width="720" height="1280"></canvas>
+                                
+                                <!-- Audio Controls & Overlay Elements inside Simulator -->
+                                <div class="player-overlay" id="player-overlay">
+                                    <!-- Volume Status -->
+                                    <div class="top-status">
+                                        <span class="preview-badge"><i class="fa-solid fa-eye"></i> 미리보기</span>
+                                        <div class="sound-indicator" id="sound-indicator">
+                                            <i class="fa-solid fa-volume-high"></i>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bottom Info (Shorts Style) -->
+                                    <div class="bottom-info">
+                                        <div class="info-channel">
+                                            <span class="channel-avatar"><i class="fa-solid fa-leaf"></i></span>
+                                            <span class="channel-name">@gb_agricultural</span>
+                                        </div>
+                                        <div class="info-description" id="info-description">
+                                            사진 3~4장을 업로드하고 숏츠를 만들어보세요!
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Floating Action Icons (Like TikTok) -->
+                                    <div class="side-actions">
+                                        <div class="action-btn"><i class="fa-solid fa-heart"></i><span>124</span></div>
+                                        <div class="action-btn"><i class="fa-solid fa-comment"></i><span>12</span></div>
+                                        <div class="action-btn"><i class="fa-solid fa-share"></i><span>공유</span></div>
+                                    </div>
+
+                                    <!-- Big Play Button Overlay -->
+                                    <div class="play-overlay" id="play-overlay-btn">
+                                        <i class="fa-solid fa-play"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Loading / Render State Screen -->
+                                <div class="rendering-overlay" id="rendering-overlay" style="display: none;">
+                                    <div class="loader-content">
+                                        <div class="spinner"></div>
+                                        <div class="loading-status" id="loading-status">동영상을 생성하는 중...</div>
+                                        <!-- Progress Bar -->
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                                        </div>
+                                        <div class="progress-percentage" id="progress-percentage">0%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Actions Under Simulator -->
+                <div class="video-actions">
+                    <button class="btn btn-secondary" id="btn-preview-play" disabled>
+                        <i class="fa-solid fa-play"></i> 미리보기 재생
+                    </button>
+                    <button class="btn btn-success" id="btn-download" disabled>
+                        <i class="fa-solid fa-circle-down"></i> 숏츠 동영상 다운로드
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>경상북도농업기술원 AI데이터 전문인재 양성교육 팀 프로젝트 결과물 &copy; 2026</p>
+        </footer>
+    </div>
+
+    <!-- Script Entry -->
+    <script src="app.js"></script>
+</body>
+</html>

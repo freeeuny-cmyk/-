@@ -1,0 +1,20 @@
+# Temporary and system files
+.system_generated/
+*.log
+*.pyc
+__pycache__/
+
+# Scratch and extraction files
+read_doc.py
+read_pptx.py
+list_slides.py
+pptx_content.txt
+pdf_content.txt
+pptx_content.txt
+list_slides.py
+read_pptx.py
+
+# package.json lock (not needed for simple app)
+package-lock.json
+node_modules/
+package.json
