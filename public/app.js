@@ -112,7 +112,7 @@ function setupEventListeners() {
     
     // Voice Selection changes
     voiceSelect.addEventListener('change', () => {
-        if (voiceSelect.value !== 'google') {
+        if (voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
             openaiKeyContainer.style.display = 'flex';
         } else {
             openaiKeyContainer.style.display = 'none';
@@ -123,7 +123,7 @@ function setupEventListeners() {
     const savedKey = localStorage.getItem('openai_api_key');
     if (savedKey) {
         openaiKeyInput.value = savedKey;
-        if (voiceSelect.value !== 'google') {
+        if (voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
             openaiKeyContainer.style.display = 'flex';
         }
     }
@@ -537,15 +537,15 @@ async function generateShortsVideo() {
     
     try {
         const fetchPromises = slidesData.map(async (slide, idx) => {
-            if (!slide.text) {
-                // If slide has no text, create a 3.0 second empty silence buffer
+            const voice = voiceSelect.value;
+            if (voice === 'none' || !slide.text) {
+                // If voice is none or slide has no text, create a 3.0 second empty silence buffer
                 const emptyBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 3.0, audioContext.sampleRate);
                 return { buffer: emptyBuffer, slideIndex: idx };
             }
             
             // Save or clear API key on generate
             const apiKey = openaiKeyInput.value.trim();
-            const voice = voiceSelect.value;
             
             if (voice !== 'google' && !apiKey) {
                 throw new Error('OPENAI_KEY_REQUIRED');
@@ -559,7 +559,7 @@ async function generateShortsVideo() {
 
             // Call Python proxy TTS backend
             const speed = parseFloat(voiceSpeed.value);
-            const keyParam = voice !== 'google' ? `&key=${encodeURIComponent(apiKey)}&voice=${voice}` : '';
+            const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
             const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
             if (!response.ok) {
                 throw new Error('TTS API failed');
