@@ -779,66 +779,58 @@ function renderFrameAtTime(time) {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Ken Burns Zoom Calculation
+    // Dynamic Pan & Scan Calculation (shows full image over time)
     // Slide elapsed percentage
     const slideDuration = activeSlide.endTime - activeSlide.startTime;
     const slideElapsed = time - activeSlide.startTime;
     const progress = slideElapsed / slideDuration;
     
-    // Draw Current Slide Image with pan/zoom
-    const scale = 1.0 + (progress * 0.12); // slow zoom in to 1.12
-    const panX = Math.sin(progress * Math.PI) * 20; // slight horizontal shift
-    
-    ctx.save();
-    
-    // Apply Zoom Center
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.scale(scale, scale);
-    ctx.translate(-canvas.width / 2 + panX / scale, -canvas.height / 2);
-    
-    // Draw base image center-cropped
+    // Draw Current Slide Image with pan
     const canvasRatio = canvas.width / canvas.height;
     const imgRatio = activeSlide.img.width / activeSlide.img.height;
     
     let drawWidth, drawHeight, drawX, drawY;
     if (imgRatio > canvasRatio) {
+        // Landscape image: fill height, pan width from left to right (0 to negative offset)
         drawHeight = canvas.height;
         drawWidth = canvas.height * imgRatio;
-        drawX = (canvas.width - drawWidth) / 2;
+        drawX = -progress * (drawWidth - canvas.width);
         drawY = 0;
     } else {
+        // Portrait image: fill width, pan height from top to bottom (0 to negative offset)
         drawWidth = canvas.width;
         drawHeight = canvas.width / imgRatio;
         drawX = 0;
-        drawY = (canvas.height - drawHeight) / 2;
+        drawY = -progress * (drawHeight - canvas.height);
     }
     
+    ctx.save();
     ctx.drawImage(activeSlide.img, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
 
     // Cross-fade transition with next/previous slide
     const fadeDuration = 0.5; // 0.5 seconds transition
     if (slideElapsed < fadeDuration && slideIndex > 0) {
-        // Fade in from previous slide
+        // Fade in from previous slide (remains static at its final panned state)
         const prevSlide = slidesData[slideIndex - 1];
         const alpha = 1.0 - (slideElapsed / fadeDuration);
         
         ctx.save();
         ctx.globalAlpha = alpha;
         
-        // Draw previous image
+        // Draw previous image in its final state (progress = 1.0)
         const prevImgRatio = prevSlide.img.width / prevSlide.img.height;
         let prevW, prevH, prevX, prevY;
         if (prevImgRatio > canvasRatio) {
             prevH = canvas.height;
             prevW = canvas.height * prevImgRatio;
-            prevX = (canvas.width - prevW) / 2;
+            prevX = -(prevW - canvas.width); // Final state panned to the far right
             prevY = 0;
         } else {
             prevW = canvas.width;
             prevH = canvas.width / prevImgRatio;
             prevX = 0;
-            prevY = (canvas.height - prevH) / 2;
+            prevY = -(prevH - canvas.height); // Final state panned to the far bottom
         }
         ctx.drawImage(prevSlide.img, prevX, prevY, prevW, prevH);
         ctx.restore();
