@@ -512,6 +512,15 @@ async function generateShortsVideo() {
         cancelAnimationFrame(animationFrameId);
     }
     
+    // Clear old preview video element to prevent player caching
+    if (window.previewVideoEl) {
+        window.previewVideoEl.pause();
+        try {
+            document.body.removeChild(window.previewVideoEl);
+        } catch(e) {}
+        window.previewVideoEl = null;
+    }
+    
     // Show Loading/Rendering screen overlay
     renderingOverlay.style.display = 'flex';
     updateProgress(0, '대본 분석 및 자막 생성 중...');
@@ -669,6 +678,15 @@ async function generateShortsVideo() {
         recorder.onstop = function() {
             generatedVideoBlob = new Blob(recordedChunks, { type: 'video/webm' });
             generatedVideoUrl = URL.createObjectURL(generatedVideoBlob);
+            
+            // Clear old preview video element to prevent player caching
+            if (window.previewVideoEl) {
+                window.previewVideoEl.pause();
+                try {
+                    document.body.removeChild(window.previewVideoEl);
+                } catch(e) {}
+                window.previewVideoEl = null;
+            }
             
             // Rendering Finished
             renderingOverlay.style.display = 'none';
