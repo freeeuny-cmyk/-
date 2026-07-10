@@ -21,6 +21,10 @@ const bgmVolume = document.getElementById('bgm-volume');
 const bgmVolumeVal = bgmVolume.nextElementSibling;
 const voiceSpeed = document.getElementById('voice-speed');
 const voiceSpeedVal = voiceSpeed.nextElementSibling;
+const voiceSelect = document.getElementById('voice-select');
+const openaiKeyContainer = document.getElementById('openai-key-container');
+const openaiKeyInput = document.getElementById('openai-key-input');
+const saveKeyCheckbox = document.getElementById('save-key-checkbox');
 const btnGenerate = document.getElementById('btn-generate');
 const btnPreviewPlay = document.getElementById('btn-preview-play');
 const btnDownload = document.getElementById('btn-download');
@@ -106,6 +110,24 @@ function setupEventListeners() {
         bgmVolumeVal.innerText = `${Math.round(bgmVolume.value * 200)}%`;
     });
     
+    // Voice Selection changes
+    voiceSelect.addEventListener('change', () => {
+        if (voiceSelect.value !== 'google') {
+            openaiKeyContainer.style.display = 'flex';
+        } else {
+            openaiKeyContainer.style.display = 'none';
+        }
+    });
+
+    // Load saved API key on startup
+    const savedKey = localStorage.getItem('openai_api_key');
+    if (savedKey) {
+        openaiKeyInput.value = savedKey;
+        if (voiceSelect.value !== 'google') {
+            openaiKeyContainer.style.display = 'flex';
+        }
+    }
+
     voiceSpeed.addEventListener('input', () => {
         voiceSpeedVal.innerText = `${parseFloat(voiceSpeed.value).toFixed(1)}x`;
     });
@@ -521,9 +543,24 @@ async function generateShortsVideo() {
                 return { buffer: emptyBuffer, slideIndex: idx };
             }
             
+            // Save or clear API key on generate
+            const apiKey = openaiKeyInput.value.trim();
+            const voice = voiceSelect.value;
+            
+            if (voice !== 'google' && !apiKey) {
+                throw new Error('OPENAI_KEY_REQUIRED');
+            }
+
+            if (saveKeyCheckbox.checked) {
+                localStorage.setItem('openai_api_key', apiKey);
+            } else {
+                localStorage.removeItem('openai_api_key');
+            }
+
             // Call Python proxy TTS backend
             const speed = parseFloat(voiceSpeed.value);
-            const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}`);
+            const keyParam = voice !== 'google' ? `&key=${encodeURIComponent(apiKey)}&voice=${voice}` : '';
+            const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
             if (!response.ok) {
                 throw new Error('TTS API failed');
             }
@@ -680,9 +717,15 @@ async function generateShortsVideo() {
 
     } catch (err) {
         console.error("Rendering error:", err);
-        alert('동영상을 제작하는 도중 오류가 발생했습니다. 다시 시도해 주세요.');
         renderingOverlay.style.display = 'none';
-        audioContext.close();
+        if (audioContext && audioContext.state !== 'closed') {
+            audioContext.close();
+        }
+        if (err.message === 'OPENAI_KEY_REQUIRED') {
+            alert('오픈AI 고품질 목소리를 사용하시려면 OpenAI API Key를 입력하셔야 합니다.\n(무료 음성을 사용하시려면 목소리 선택에서 "기본 여성 목소리(무료)"를 선택해 주세요.)');
+        } else {
+            alert('동영상을 제작하는 도중 오류가 발생했습니다. 다시 시도해 주세요.');
+        }
     }
 }
 

@@ -88,11 +88,36 @@
                         </div>
 
                         <div class="setting-group">
+                            <label for="voice-select">AI 목소리 선택 (TTS)</label>
+                            <select id="voice-select">
+                                <option value="google" selected>기본 여성 목소리 (무료)</option>
+                                <option value="shimmer">여성 1 - 시머 (맑은 톤, OpenAI)</option>
+                                <option value="nova">여성 2 - 노바 (차분한 톤, OpenAI)</option>
+                                <option value="alloy">여성/남성 3 - 알로이 (표준 톤, OpenAI)</option>
+                                <option value="onyx">남성 1 - 오닉스 (신뢰감 있는 중저음, OpenAI)</option>
+                                <option value="echo">남성 2 - 에코 (지적인 톤, OpenAI)</option>
+                                <option value="fable">남성 3 - 페이블 (활기찬 톤, OpenAI)</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
                             <label for="voice-speed">음성 재생 속도 (TTS)</label>
                             <div class="range-slider">
                                 <input type="range" id="voice-speed" min="0.8" max="1.3" step="0.05" value="1.0">
                                 <span class="range-val">1.0x</span>
                             </div>
+                        </div>
+
+                        <!-- OpenAI API Key Input (Hidden initially) -->
+                        <div class="setting-group" id="openai-key-container" style="display: none; grid-column: span 2;">
+                            <label for="openai-key-input">OpenAI API Key 입력</label>
+                            <div class="api-key-input-wrapper">
+                                <input type="password" id="openai-key-input" placeholder="sk-proj-...">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="save-key-checkbox" checked> 내 PC에 저장
+                                </label>
+                            </div>
+                            <span class="helper-text">* 입력하신 API Key는 브라우저(localStorage)에만 안전하게 보관됩니다.</span>
                         </div>
                     </div>
                 </div>
