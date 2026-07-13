@@ -326,8 +326,21 @@ textarea:focus {
     gap: 20px;
 }
 
+/* Card Sub Settings Grid */
+.card-sub-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(16, 185, 129, 0.12);
+}
+
 @media (max-width: 640px) {
     .audio-settings {
+        grid-template-columns: 1fr;
+    }
+    .card-sub-settings {
         grid-template-columns: 1fr;
     }
 }

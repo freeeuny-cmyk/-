@@ -35,6 +35,13 @@ const progressPercentage = document.getElementById('progress-percentage');
 const infoDescription = document.getElementById('info-description');
 const playOverlayBtn = document.getElementById('play-overlay-btn');
 
+// New Subtitle & Duration Settings DOM Elements
+const subtitlePosition = document.getElementById('subtitle-position');
+const subtitleSize = document.getElementById('subtitle-size');
+const subtitleSizeVal = subtitleSize.nextElementSibling;
+const slideDuration = document.getElementById('slide-duration');
+const slideDurationVal = slideDuration.nextElementSibling;
+
 // Video Generation Variables
 let generatedVideoBlob = null;
 let generatedVideoUrl = null;
@@ -158,6 +165,14 @@ function setupEventListeners() {
     btnPreviewPlay.addEventListener('click', togglePreviewPlayback);
     playOverlayBtn.addEventListener('click', togglePreviewPlayback);
     btnDownload.addEventListener('click', downloadVideo);
+
+    // New Subtitle & Duration Sliders Listeners
+    subtitleSize.addEventListener('input', () => {
+        subtitleSizeVal.innerText = `${subtitleSize.value}px`;
+    });
+    slideDuration.addEventListener('input', () => {
+        slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
+    });
 }
 
 // Handle Custom BGM file loading
@@ -545,11 +560,13 @@ async function generateShortsVideo() {
     updateProgress(15, '한국어 AI 음성(TTS) 합성 중...');
     
     try {
+        const userDuration = parseFloat(slideDuration.value) || 3.0;
+        const voice = voiceSelect.value;
+
         const fetchPromises = slidesData.map(async (slide, idx) => {
-            const voice = voiceSelect.value;
             if (voice === 'none' || !slide.text) {
-                // If voice is none or slide has no text, create a 3.0 second empty silence buffer
-                const emptyBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 3.0, audioContext.sampleRate);
+                // Create silence buffer with user specified duration
+                const emptyBuffer = audioContext.createBuffer(1, audioContext.sampleRate * userDuration, audioContext.sampleRate);
                 return { buffer: emptyBuffer, slideIndex: idx };
             }
             
@@ -594,9 +611,14 @@ async function generateShortsVideo() {
         
         slidesData.forEach((slide, idx) => {
             const ttsResult = ttsResults.find(r => r.slideIndex === idx);
-            const duration = ttsResult ? ttsResult.buffer.duration : 3.0;
             
-            slide.audioBuffer = ttsResult ? ttsResult.buffer : null;
+            // Dynamic duration: Use user-specified duration as minimum, but expand if TTS is longer
+            let duration = userDuration;
+            if (ttsResult && voice !== 'none') {
+                duration = Math.max(ttsResult.buffer.duration, userDuration);
+            }
+            
+            slide.audioBuffer = (ttsResult && voice !== 'none') ? ttsResult.buffer : null;
             slide.startTime = currentOffset;
             slide.endTime = currentOffset + duration + padding;
             
@@ -854,27 +876,74 @@ function renderFrameAtTime(time) {
         ctx.restore();
     }
 
-    // Draw Dark Gradient Overlay at the bottom for captions
-    const grad = ctx.createLinearGradient(0, canvas.height - 350, 0, canvas.height);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(0.4, 'rgba(0,0,0,0.6)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.95)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, canvas.height - 350, canvas.width, 350);
+    // Subtitle Custom Parameters
+    const pos = subtitlePosition.value || 'bottom';
+    const size = parseInt(subtitleSize.value) || 34;
+    const lineHeight = Math.round(size * 1.35);
+    
+    // Set Font before wrapping to measure correct text width
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${size}px "Noto Sans KR", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const lines = activeSlide.text ? wrapText(ctx, activeSlide.text, canvas.width - 100) : [];
+    const totalTextHeight = lines.length * lineHeight;
+    
+    // 1. Render optimal background overlay based on subtitle position for maximum legibility
+    if (activeSlide.text && lines.length > 0) {
+        if (pos === 'top') {
+            // Top Dark Gradient Overlay (fade down)
+            const grad = ctx.createLinearGradient(0, 320, 0, 0);
+            grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(0.4, 'rgba(0,0,0,0.6)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.92)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, 320);
+        } else if (pos === 'middle') {
+            // Middle Translucent Band (slim bar)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            const paddingY = 40;
+            const boxHeight = totalTextHeight + paddingY;
+            ctx.fillRect(0, (canvas.height / 2) - (boxHeight / 2), canvas.width, boxHeight);
+        } else {
+            // Bottom Dark Gradient Overlay (fade up - default)
+            const grad = ctx.createLinearGradient(0, canvas.height - 350, 0, canvas.height);
+            grad.addColorStop(0, 'rgba(0,0,0,0)');
+            grad.addColorStop(0.4, 'rgba(0,0,0,0.6)');
+            grad.addColorStop(1, 'rgba(0,0,0,0.95)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, canvas.height - 350, canvas.width, 350);
+        }
+    } else {
+        // Draw default bottom gradient when no text is present to maintain standard look
+        const grad = ctx.createLinearGradient(0, canvas.height - 350, 0, canvas.height);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(0.4, 'rgba(0,0,0,0.6)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.95)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, canvas.height - 350, canvas.width, 350);
+    }
 
-    // Draw Subtitle Captions
-    if (activeSlide.text) {
+    // 2. Render Subtitle Captions
+    if (activeSlide.text && lines.length > 0) {
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 34px "Noto Sans KR", sans-serif';
+        ctx.font = `bold ${size}px "Noto Sans KR", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Wrap subtitle lines
-        const lines = wrapText(ctx, activeSlide.text, canvas.width - 100);
-        
-        // Draw each line with text shadow
-        const lineHeight = 46;
-        const startY = canvas.height - 180 - ((lines.length - 1) * lineHeight / 2);
+        // Calculate startY coordinate depending on anchor position
+        let startY;
+        if (pos === 'top') {
+            // Safe zone below Notch/Title
+            startY = 160 + (lineHeight / 2);
+        } else if (pos === 'middle') {
+            // Dead center
+            startY = (canvas.height / 2) - (totalTextHeight / 2) + (lineHeight / 2);
+        } else {
+            // Bottom (default)
+            startY = canvas.height - 180 - (totalTextHeight / 2) + (lineHeight / 2);
+        }
         
         ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
         ctx.shadowBlur = 10;
@@ -882,7 +951,6 @@ function renderFrameAtTime(time) {
         ctx.shadowOffsetY = 2;
         
         lines.forEach((line, idx) => {
-            // Draw background outline behind text for extreme readability
             ctx.fillText(line, canvas.width / 2, startY + (idx * lineHeight));
         });
         

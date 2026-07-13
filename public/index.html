@@ -57,6 +57,34 @@
                         <span id="char-count">0자</span>
                         <span class="helper-text">* 마침표(.)나 엔터(줄바꿈)를 기준으로 자막이 분할됩니다.</span>
                     </div>
+
+                    <!-- 자막 상세 및 재생 시간 세팅 -->
+                    <div class="card-sub-settings">
+                        <div class="setting-group">
+                            <label for="subtitle-position">자막 위치 설정</label>
+                            <select id="subtitle-position">
+                                <option value="bottom" selected>하단 (기본)</option>
+                                <option value="middle">중앙</option>
+                                <option value="top">상단</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="subtitle-size">자막 글자 크기</label>
+                            <div class="range-slider">
+                                <input type="range" id="subtitle-size" min="24" max="54" step="2" value="34">
+                                <span class="range-val">34px</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label for="slide-duration">슬라이드 재생 시간 (최소)</label>
+                            <div class="range-slider">
+                                <input type="range" id="slide-duration" min="1.5" max="8.0" step="0.5" value="3.0">
+                                <span class="range-val">3.0초</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="panel-card">
