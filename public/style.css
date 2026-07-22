@@ -1,20 +1,20 @@
 /* Global Styling Reset */
 :root {
-    --primary-color: #004b36;
-    --primary-light: #0f6b49;
-    --accent-color: #10b981;
-    --accent-light: #34d399;
-    --bg-gradient: linear-gradient(135deg, #071913 0%, #040c0a 100%);
-    --card-bg: rgba(15, 32, 26, 0.7);
-    --card-border: rgba(16, 185, 129, 0.15);
-    --card-border-focus: rgba(16, 185, 129, 0.5);
-    --text-primary: #f3f4f6;
-    --text-secondary: #9ca3af;
-    --text-muted: #6b7280;
+    --primary-color: #0f766e;
+    --primary-light: #0d9488;
+    --accent-color: #059669;
+    --accent-light: #10b981;
+    --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --card-border-focus: #059669;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
     --white: #ffffff;
-    --shadow-glow: 0 8px 32px 0 rgba(0, 75, 54, 0.3);
-    --shadow-glow-accent: 0 0 15px rgba(16, 185, 129, 0.4);
-    --phone-border: #1f2937;
+    --shadow-glow: 0 4px 20px 0 rgba(15, 23, 42, 0.06);
+    --shadow-glow-accent: 0 4px 15px rgba(5, 150, 105, 0.25);
+    --phone-border: #1e293b;
 }
 
 * {
@@ -25,7 +25,7 @@
 
 body {
     font-family: 'Noto Sans KR', sans-serif;
-    background: var(--bg-gradient);
+    background: #f8fafc;
     color: var(--text-primary);
     min-height: 100vh;
     overflow-x: hidden;
@@ -48,12 +48,11 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 15px 25px;
-    background: rgba(10, 25, 20, 0.6);
-    border: 1px solid var(--card-border);
-    backdrop-filter: blur(10px);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
     margin-bottom: 25px;
-    box-shadow: var(--shadow-glow);
+    box-shadow: 0 4px 20px 0 rgba(15, 23, 42, 0.05);
 }
 
 .header-logo {
@@ -65,7 +64,7 @@ body {
 .leaf-icon {
     font-size: 28px;
     color: var(--accent-color);
-    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));
     animation: pulse-leaf 3s infinite ease-in-out;
 }
 
@@ -73,7 +72,7 @@ body {
     width: 36px;
     height: 36px;
     object-fit: contain;
-    filter: drop-shadow(0 0 8px rgba(0, 119, 182, 0.6));
+    filter: drop-shadow(0 2px 4px rgba(0, 119, 182, 0.3));
 }
 
 .header-slogan {
@@ -87,7 +86,7 @@ body {
     height: 38px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
 .logo-text {
@@ -97,9 +96,9 @@ body {
 
 .logo-sub {
     font-size: 11px;
-    color: var(--accent-light);
+    color: #059669;
     letter-spacing: 0.5px;
-    font-weight: 500;
+    font-weight: 600;
     white-space: nowrap;
     margin-top: 2px;
 }
@@ -109,7 +108,7 @@ body {
     font-size: 20px;
     font-weight: 700;
     line-height: 1.25;
-    background: linear-gradient(90deg, #ffffff 0%, var(--accent-light) 100%);
+    background: linear-gradient(90deg, #0f172a 0%, #059669 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     white-space: nowrap;
@@ -149,17 +148,17 @@ body {
 }
 
 .panel-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 16px;
     padding: 24px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-    transition: border-color 0.3s ease;
+    box-shadow: 0 4px 20px 0 rgba(15, 23, 42, 0.04);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .panel-card:hover {
-    border-color: rgba(16, 185, 129, 0.25);
+    border-color: #cbd5e1;
+    box-shadow: 0 8px 30px 0 rgba(15, 23, 42, 0.08);
 }
 
 .card-title {
@@ -169,7 +168,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--white);
+    color: #0f172a;
 }
 
 .card-title .icon {
@@ -184,19 +183,19 @@ body {
 
 /* Upload Zone */
 .upload-zone {
-    border: 2px dashed rgba(16, 185, 129, 0.3);
+    border: 2px dashed #cbd5e1;
     border-radius: 12px;
     padding: 30px 20px;
     text-align: center;
     cursor: pointer;
-    background: rgba(16, 185, 129, 0.03);
+    background: #f8fafc;
     transition: all 0.3s ease;
 }
 
 .upload-zone:hover, .upload-zone.dragover {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: var(--accent-color);
-    box-shadow: var(--shadow-glow-accent);
+    background: #f0fdf4;
+    border-color: #059669;
+    box-shadow: 0 4px 15px rgba(5, 150, 105, 0.15);
 }
 
 .upload-icon {
@@ -311,11 +310,11 @@ body {
 textarea {
     width: 100%;
     height: 140px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--card-border);
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 12px 15px;
-    color: var(--text-primary);
+    color: #0f172a;
     font-size: 14px;
     resize: none;
     outline: none;
@@ -324,8 +323,9 @@ textarea {
 }
 
 textarea:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    border-color: #059669;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
 }
 
 .script-meta {
@@ -384,11 +384,11 @@ textarea:focus {
 }
 
 select {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--card-border);
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 10px 14px;
-    color: var(--text-primary);
+    color: #0f172a;
     font-size: 13px;
     outline: none;
     cursor: pointer;
@@ -396,12 +396,13 @@ select {
 }
 
 select:focus {
-    border-color: var(--accent-color);
+    border-color: #059669;
+    background: #ffffff;
 }
 
 select option {
-    background: #0a1411;
-    color: var(--text-primary);
+    background: #ffffff;
+    color: #0f172a;
 }
 
 input[type="file"]::file-selector-button {
@@ -464,8 +465,8 @@ input[type="file"]::file-selector-button:hover {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--card-border);
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 7px 12px;
     transition: all 0.3s ease;
@@ -537,14 +538,14 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--text-primary);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #f1f5f9;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: #e2e8f0;
+    border-color: #94a3b8;
 }
 
 .btn-success {
@@ -914,18 +915,19 @@ input[type="file"]::file-selector-button:hover {
 
 #openai-key-input {
     flex-grow: 1;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid var(--card-border);
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
     border-radius: 8px;
     padding: 10px 14px;
-    color: var(--text-primary);
+    color: #0f172a;
     font-size: 13px;
     outline: none;
     transition: all 0.3s ease;
 }
 
 #openai-key-input:focus {
-    border-color: var(--accent-color);
+    border-color: #059669;
+    background: #ffffff;
 }
 
 .checkbox-label {
