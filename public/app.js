@@ -54,7 +54,7 @@ let totalVideoDuration = 0; // Total duration of the video in seconds
 
 // Preload Official Gyeongsangbuk-do Emblem Logo Image
 const gbLogoImg = new Image();
-gbLogoImg.src = 'gb_logo.svg';
+gbLogoImg.src = 'gb_logo.png';
 
 // Initialize Canvas
 window.addEventListener('DOMContentLoaded', () => {
@@ -1136,7 +1136,7 @@ function togglePreviewPlayback() {
         
         window.previewVideoEl.addEventListener('play', () => {
             isPlaying = true;
-            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> 일시 정지';
+            playBtn.innerHTML = '<i class="fa-solid fa-pause"></i> <span>일시 정지</span>';
             overlayBtn.classList.remove('visible');
             overlayBtn.classList.add('paused');
             
@@ -1144,7 +1144,7 @@ function togglePreviewPlayback() {
             function step() {
                 if (window.previewVideoEl.paused || window.previewVideoEl.ended) {
                     isPlaying = false;
-                    playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 미리보기 재생';
+                    playBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>미리보기<br>재생</span>';
                     overlayBtn.classList.remove('paused');
                     overlayBtn.classList.add('visible');
                     return;
@@ -1158,14 +1158,14 @@ function togglePreviewPlayback() {
 
         window.previewVideoEl.addEventListener('pause', () => {
             isPlaying = false;
-            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 미리보기 재생';
+            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>미리보기<br>재생</span>';
             overlayBtn.classList.remove('paused');
             overlayBtn.classList.add('visible');
         });
 
         window.previewVideoEl.addEventListener('ended', () => {
             isPlaying = false;
-            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 미리보기 재생';
+            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> <span>미리보기<br>재생</span>';
             overlayBtn.classList.remove('paused');
             overlayBtn.classList.add('visible');
             window.previewVideoEl.currentTime = 0;
