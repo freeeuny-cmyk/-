@@ -81,7 +81,7 @@ function drawPlaceholder() {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 36px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('경북농업기술원 AI 숏츠', canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText('AI 숏폼 퀵스튜디오', canvas.width / 2, canvas.height / 2 - 40);
     
     ctx.fillStyle = '#10b981';
     ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
