@@ -69,6 +69,13 @@ body {
     animation: pulse-leaf 3s infinite ease-in-out;
 }
 
+.header-logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6));
+}
+
 .logo-text {
     display: flex;
     flex-direction: column;

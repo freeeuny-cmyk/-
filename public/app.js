@@ -52,6 +52,10 @@ let generatedVideoUrl = null;
 let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 
+// Preload Official Gyeongsangbuk-do Emblem Logo Image
+const gbLogoImg = new Image();
+gbLogoImg.src = 'gb_logo.svg';
+
 // Initialize Canvas
 window.addEventListener('DOMContentLoaded', () => {
     canvas = document.getElementById('shorts-canvas');
@@ -95,6 +99,9 @@ function drawPlaceholder() {
     ctx.fillStyle = '#10b981';
     ctx.font = '64px "Font Awesome 6 Free"';
     ctx.fillText('\uf06c', canvas.width / 2, canvas.height / 2 - 130);
+
+    // Always draw fixed watermark at bottom center
+    drawFixedWatermark(ctx);
 }
 
 // Set up all UI event listeners
@@ -1018,6 +1025,67 @@ function renderFrameAtTime(time) {
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
     }
+
+    // 3. Render Fixed Institution Watermark & Logo at Bottom Center (Always Displayed)
+    drawFixedWatermark(ctx);
+}
+
+// Render Fixed Institution Watermark & Official Logo at Bottom Center
+function drawFixedWatermark(ctx) {
+    ctx.save();
+    const watermarkY = canvas.height - 65;
+    const logoText = "경상북도농업기술원";
+
+    ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
+    const textWidth = ctx.measureText(logoText).width;
+    const logoSize = 24; // 24x24 emblem
+    const spacing = 10;
+    const totalWidth = logoSize + spacing + textWidth;
+    const pillPaddingX = 16;
+    const boxWidth = totalWidth + (pillPaddingX * 2);
+    const boxHeight = 38;
+    const boxX = (canvas.width - boxWidth) / 2;
+    const boxY = watermarkY - (boxHeight / 2);
+
+    // Draw Translucent Rounded Pill Background
+    ctx.fillStyle = 'rgba(5, 20, 15, 0.85)';
+    ctx.strokeStyle = 'rgba(16, 185, 129, 0.55)';
+    ctx.lineWidth = 1.5;
+    
+    if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 19);
+        ctx.fill();
+        ctx.stroke();
+    } else {
+        ctx.beginPath();
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+    }
+
+    const startX = boxX + pillPaddingX;
+    const logoY = watermarkY - (logoSize / 2);
+
+    // Draw Official Gyeongsangbuk-do Emblem Logo Image
+    if (gbLogoImg.complete && gbLogoImg.naturalWidth !== 0) {
+        ctx.drawImage(gbLogoImg, startX, logoY, logoSize, logoSize);
+    } else {
+        // Fallback leaf icon if loading
+        ctx.fillStyle = '#10b981';
+        ctx.font = '900 19px "Font Awesome 6 Free"';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\uf06c', startX, watermarkY);
+    }
+
+    // Draw "경상북도농업기술원" Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(logoText, startX + logoSize + spacing, watermarkY);
+
+    ctx.restore();
 }
 
 // Wrap text to fit canvas width
