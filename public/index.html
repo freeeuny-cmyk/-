@@ -70,6 +70,23 @@
                         </div>
 
                         <div class="setting-group">
+                            <label for="subtitle-color-preset">자막 글자 색상</label>
+                            <select id="subtitle-color-preset">
+                                <option value="#ffffff" selected>흰색 (기본)</option>
+                                <option value="#ffeb3b">노란색 (강조)</option>
+                                <option value="#00ffcc">민트색</option>
+                                <option value="#00e5ff">하늘색</option>
+                                <option value="#ff9800">주황색</option>
+                                <option value="#ff4081">핑크색</option>
+                                <option value="custom">직접 선택 (커스텀)</option>
+                            </select>
+                            <div id="custom-color-container" class="color-picker-wrapper" style="display: none; margin-top: 6px;">
+                                <input type="color" id="subtitle-color" value="#ffffff">
+                                <span id="subtitle-color-val" class="color-val">#FFFFFF</span>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
                             <label for="subtitle-size">자막 글자 크기</label>
                             <div class="range-slider">
                                 <input type="range" id="subtitle-size" min="24" max="54" step="2" value="34">

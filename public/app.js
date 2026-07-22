@@ -37,6 +37,10 @@ const playOverlayBtn = document.getElementById('play-overlay-btn');
 
 // New Subtitle & Duration Settings DOM Elements
 const subtitlePosition = document.getElementById('subtitle-position');
+const subtitleColorPreset = document.getElementById('subtitle-color-preset');
+const customColorContainer = document.getElementById('custom-color-container');
+const subtitleColor = document.getElementById('subtitle-color');
+const subtitleColorVal = document.getElementById('subtitle-color-val');
 const subtitleSize = document.getElementById('subtitle-size');
 const subtitleSizeVal = subtitleSize.nextElementSibling;
 const slideDuration = document.getElementById('slide-duration');
@@ -167,6 +171,16 @@ function setupEventListeners() {
     btnDownload.addEventListener('click', downloadVideo);
 
     // New Subtitle & Duration Sliders Listeners
+    subtitleColorPreset.addEventListener('change', () => {
+        if (subtitleColorPreset.value === 'custom') {
+            customColorContainer.style.display = 'flex';
+        } else {
+            customColorContainer.style.display = 'none';
+        }
+    });
+    subtitleColor.addEventListener('input', () => {
+        subtitleColorVal.innerText = subtitleColor.value.toUpperCase();
+    });
     subtitleSize.addEventListener('input', () => {
         subtitleSizeVal.innerText = `${subtitleSize.value}px`;
     });
@@ -878,11 +892,15 @@ function renderFrameAtTime(time) {
 
     // Subtitle Custom Parameters
     const pos = subtitlePosition.value || 'bottom';
+    let color = subtitleColorPreset.value;
+    if (color === 'custom') {
+        color = subtitleColor.value || '#ffffff';
+    }
     const size = parseInt(subtitleSize.value) || 34;
     const lineHeight = Math.round(size * 1.35);
     
     // Set Font before wrapping to measure correct text width
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = color;
     ctx.font = `bold ${size}px "Noto Sans KR", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -927,7 +945,7 @@ function renderFrameAtTime(time) {
 
     // 2. Render Subtitle Captions
     if (activeSlide.text && lines.length > 0) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = color;
         ctx.font = `bold ${size}px "Noto Sans KR", sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
