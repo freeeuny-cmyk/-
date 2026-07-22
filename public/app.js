@@ -99,9 +99,10 @@ function drawPlaceholder() {
 
 // Set up all UI event listeners
 function setupEventListeners() {
-    // Character Counter
+    // Character Counter & Live Preview
     scriptInput.addEventListener('input', () => {
         charCount.innerText = `${scriptInput.value.length}자`;
+        updateLivePreview();
     });
 
     // BGM Selection changes
@@ -171,21 +172,28 @@ function setupEventListeners() {
     btnDownload.addEventListener('click', downloadVideo);
 
     // New Subtitle & Duration Sliders Listeners
+    subtitlePosition.addEventListener('change', () => {
+        updateLivePreview();
+    });
     subtitleColorPreset.addEventListener('change', () => {
         if (subtitleColorPreset.value === 'custom') {
             customColorContainer.style.display = 'flex';
         } else {
             customColorContainer.style.display = 'none';
         }
+        updateLivePreview();
     });
     subtitleColor.addEventListener('input', () => {
         subtitleColorVal.innerText = subtitleColor.value.toUpperCase();
+        updateLivePreview();
     });
     subtitleSize.addEventListener('input', () => {
         subtitleSizeVal.innerText = `${subtitleSize.value}px`;
+        updateLivePreview();
     });
     slideDuration.addEventListener('input', () => {
         slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
+        updateLivePreview();
     });
 }
 
@@ -274,11 +282,11 @@ function renderPreviews() {
     
     // Draw first image on canvas if available
     if (images.length > 0) {
-        drawImageOnCanvas(images[0].img);
+        updateLivePreview();
         infoDescription.innerText = `사진 ${images.length}장이 준비되었습니다. 대본을 입력하고 동영상을 생성해 보세요!`;
     } else {
         drawPlaceholder();
-        infoDescription.innerText = '사진 3~4장을 업로드하고 숏츠를 만들어보세요!';
+        infoDescription.innerText = '사진 3~4장을 업로드하고 숏폼을 만들어보세요!';
     }
 }
 
@@ -363,6 +371,29 @@ function handleDragEnd() {
     });
 }
 
+// Update live preview on canvas when controls or inputs change
+function updateLivePreview() {
+    if (images.length === 0) {
+        drawPlaceholder();
+        return;
+    }
+    if (!isPlaying && (!renderingOverlay || renderingOverlay.style.display !== 'flex')) {
+        const sentences = getScriptSentences();
+        const numSlides = Math.max(images.length, sentences.length);
+        slidesData = [];
+        for (let i = 0; i < numSlides; i++) {
+            slidesData.push({
+                img: images[i % images.length].img,
+                text: sentences[i] || "",
+                startTime: i * parseFloat(slideDuration.value || 3.0),
+                endTime: (i + 1) * parseFloat(slideDuration.value || 3.0)
+            });
+        }
+        const activeIdx = Math.min(activeSlideIndex, slidesData.length - 1);
+        renderFrameAtTime(slidesData[activeIdx].startTime + 0.1);
+    }
+}
+
 // Process scripts input and split into sentences
 function getScriptSentences() {
     const text = scriptInput.value.trim();
@@ -371,31 +402,24 @@ function getScriptSentences() {
         return ["경상북도농업기술원입니다. 멋진 우리 농작물과 연구 성과를 소개합니다."];
     }
     
-    // Split by newlines or sentence endings (., ?, !)
-    // We filter empty elements
-    const rawSentences = text.split(/[\n]+/);
+    // Split by newlines so each line corresponds to a slide caption
+    const rawLines = text.split(/\r?\n/);
     const sentences = [];
     
-    rawSentences.forEach(line => {
-        const trimmed = line.trim();
+    rawLines.forEach(line => {
+        // Strip list number prefixes like "1. ", "1) ", "- ", "• "
+        let trimmed = line.trim().replace(/^(\d+[\.\)]|[-•*])\s*/, '');
         if (trimmed.length > 0) {
-            // Further split by sentences inside a line if they are long
-            const subSentences = trimmed.split(/(?<=[.?!])\s+/);
-            subSentences.forEach(sub => {
-                const subTrimmed = sub.trim();
-                if (subTrimmed.length > 0) {
-                    sentences.push(subTrimmed);
-                }
-            });
+            sentences.push(trimmed);
         }
     });
     
-    return sentences;
+    return sentences.length > 0 ? sentences : ["경상북도농업기술원입니다. 멋진 우리 농작물과 연구 성과를 소개합니다."];
 }
 
 // Synthesize Ambient background music loops using Web Audio API
 // This saves BGM files and avoids CORS or loading issues!
-function createSynthBgmSource(audioCtx, tempo = 90) {
+function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
     const outputNode = audioCtx.createGain();
     outputNode.gain.value = parseFloat(bgmVolume.value);
 
@@ -452,25 +476,25 @@ function createSynthBgmSource(audioCtx, tempo = 90) {
             
             // Volume Envelope
             const oscGain = audioCtx.createGain();
-            oscGain.gain.setValueAtTime(0, audioCtx.currentTime + time);
+            oscGain.gain.setValueAtTime(0, startTime + time);
             
             if (isAmbient) {
                 // Slow attack and long release (pad sound)
-                oscGain.gain.linearRampToValueAtTime(0.04 / activeChord.length, audioCtx.currentTime + time + 1.5);
-                oscGain.gain.setValueAtTime(0.04 / activeChord.length, audioCtx.currentTime + time + synthInterval * 4 - 2.0);
-                oscGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time + synthInterval * 4);
+                oscGain.gain.linearRampToValueAtTime(0.04 / activeChord.length, startTime + time + 1.5);
+                oscGain.gain.setValueAtTime(0.04 / activeChord.length, startTime + time + synthInterval * 4 - 2.0);
+                oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + time + synthInterval * 4);
             } else {
                 // Pluck sound
-                oscGain.gain.linearRampToValueAtTime(0.06 / activeChord.length, audioCtx.currentTime + time + 0.1);
-                oscGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + time + synthInterval * 2);
+                oscGain.gain.linearRampToValueAtTime(0.06 / activeChord.length, startTime + time + 0.1);
+                oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + time + synthInterval * 2);
             }
             
             osc.connect(filter);
             filter.connect(oscGain);
             oscGain.connect(outputNode);
             
-            osc.start(audioCtx.currentTime + time);
-            osc.stop(audioCtx.currentTime + time + (isAmbient ? synthInterval * 4 : synthInterval * 2));
+            osc.start(startTime + time);
+            osc.stop(startTime + time + (isAmbient ? synthInterval * 4 : synthInterval * 2));
         });
 
         // Play drums/beat if upbeat BGM
@@ -482,16 +506,16 @@ function createSynthBgmSource(audioCtx, tempo = 90) {
                 if (b === 0 || b === 4) {
                     const kickOsc = audioCtx.createOscillator();
                     const kickGain = audioCtx.createGain();
-                    kickOsc.frequency.setValueAtTime(150, audioCtx.currentTime + beatTime);
-                    kickOsc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + beatTime + 0.3);
+                    kickOsc.frequency.setValueAtTime(150, startTime + beatTime);
+                    kickOsc.frequency.exponentialRampToValueAtTime(0.01, startTime + beatTime + 0.3);
                     
-                    kickGain.gain.setValueAtTime(0.15, audioCtx.currentTime + beatTime);
-                    kickGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + beatTime + 0.3);
+                    kickGain.gain.setValueAtTime(0.15, startTime + beatTime);
+                    kickGain.gain.exponentialRampToValueAtTime(0.0001, startTime + beatTime + 0.3);
                     
                     kickOsc.connect(kickGain);
                     kickGain.connect(outputNode);
-                    kickOsc.start(audioCtx.currentTime + beatTime);
-                    kickOsc.stop(audioCtx.currentTime + beatTime + 0.3);
+                    kickOsc.start(startTime + beatTime);
+                    kickOsc.stop(startTime + beatTime + 0.3);
                 }
                 
                 // Snare drum on 3 and 7 (using white noise)
@@ -509,21 +533,21 @@ function createSynthBgmSource(audioCtx, tempo = 90) {
                     noiseFilter.frequency.value = 1000;
                     
                     const noiseGain = audioCtx.createGain();
-                    noiseGain.gain.setValueAtTime(0.05, audioCtx.currentTime + beatTime);
-                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + beatTime + 0.15);
+                    noiseGain.gain.setValueAtTime(0.05, startTime + beatTime);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + beatTime + 0.15);
                     
                     noise.connect(noiseFilter);
                     noiseFilter.connect(noiseGain);
                     noiseGain.connect(outputNode);
                     
-                    noise.start(audioCtx.currentTime + beatTime);
-                    noise.stop(audioCtx.currentTime + beatTime + 0.15);
+                    noise.start(startTime + beatTime);
+                    noise.stop(startTime + beatTime + 0.15);
                 }
             }
         }
 
         chordIndex++;
-        time += isAmbient ? synthInterval * 4 : synthInterval * 4;
+        time += synthInterval * 4;
     }
 
     return outputNode;
@@ -540,10 +564,23 @@ async function generateShortsVideo() {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
     }
+
+    // Disable action buttons during rendering
+    btnPreviewPlay.disabled = true;
+    btnDownload.disabled = true;
     
-    // Clear old preview video element to prevent player caching
+    // Clear old blob URL & preview video element to prevent caching old video
+    if (generatedVideoUrl) {
+        try {
+            URL.revokeObjectURL(generatedVideoUrl);
+        } catch(e) {}
+        generatedVideoUrl = null;
+        generatedVideoBlob = null;
+    }
+
     if (window.previewVideoEl) {
         window.previewVideoEl.pause();
+        window.previewVideoEl.src = '';
         try {
             document.body.removeChild(window.previewVideoEl);
         } catch(e) {}
@@ -628,7 +665,7 @@ async function generateShortsVideo() {
             
             // Dynamic duration: Use user-specified duration as minimum, but expand if TTS is longer
             let duration = userDuration;
-            if (ttsResult && voice !== 'none') {
+            if (ttsResult && voice !== 'none' && ttsResult.buffer) {
                 duration = Math.max(ttsResult.buffer.duration, userDuration);
             }
             
@@ -644,6 +681,9 @@ async function generateShortsVideo() {
         // 5. Setup Web Audio MediaStreamDestination for Recording
         const recDest = audioContext.createMediaStreamDestination();
         
+        // Lock start timestamp relative to AudioContext clock to prevent desync
+        const audioStartTime = audioContext.currentTime + 0.1;
+
         // Play TTS voices at designated times
         slidesData.forEach(slide => {
             if (slide.audioBuffer) {
@@ -653,11 +693,11 @@ async function generateShortsVideo() {
                 // Route to recording destination
                 voiceSource.connect(recDest);
                 
-                // Also route to user speakers so they can hear the generation/preview in real time
+                // Also route to user speakers so they can hear the generation in real time
                 voiceSource.connect(audioContext.destination);
                 
-                // Play at the scheduled start time
-                voiceSource.start(audioContext.currentTime + slide.startTime);
+                // Play at the locked scheduled start time
+                voiceSource.start(audioStartTime + slide.startTime);
             }
         });
 
@@ -676,16 +716,16 @@ async function generateShortsVideo() {
             bgmGain.connect(recDest);
             bgmGain.connect(audioContext.destination);
             
-            bgmSource.start(audioContext.currentTime);
+            bgmSource.start(audioStartTime);
         } else {
-            // Synthesized ambient or upbeat BGM
-            const synthBgmNode = createSynthBgmSource(audioContext);
+            // Synthesized ambient or upbeat BGM locked to audioStartTime
+            const synthBgmNode = createSynthBgmSource(audioContext, audioStartTime);
             synthBgmNode.connect(recDest);
             synthBgmNode.connect(audioContext.destination);
         }
 
         // 7. Setup Canvas MediaRecorder
-        updateProgress(65, '숏츠 영상 비주얼 합인 중...');
+        updateProgress(65, '숏폼 영상 비주얼 합성 중...');
         
         const canvasStream = canvas.captureStream(30); // 30 FPS
         const combinedStream = new MediaStream([
@@ -706,7 +746,7 @@ async function generateShortsVideo() {
         const recordedChunks = [];
         
         recorder.ondataavailable = function(e) {
-            if (e.dataSize || e.data.size > 0) {
+            if (e.data && e.data.size > 0) {
                 recordedChunks.push(e.data);
             }
         };
@@ -715,7 +755,7 @@ async function generateShortsVideo() {
             generatedVideoBlob = new Blob(recordedChunks, { type: 'video/webm' });
             generatedVideoUrl = URL.createObjectURL(generatedVideoBlob);
             
-            // Clear old preview video element to prevent player caching
+            // Clear old preview video element
             if (window.previewVideoEl) {
                 window.previewVideoEl.pause();
                 try {
@@ -731,22 +771,23 @@ async function generateShortsVideo() {
             
             // Clean up Audio Context
             bgmSource?.stop();
-            audioContext.close();
+            if (audioContext.state !== 'closed') {
+                audioContext.close();
+            }
             
             // Set channel/description in simulator
             infoDescription.innerText = scriptInput.value.length > 50 
                 ? scriptInput.value.substr(0, 50) + "..." 
-                : scriptInput.value || "농업기술원 숏츠 생성 완료!";
+                : scriptInput.value || "농업기술원 숏폼 생성 완료!";
 
-            alert('숏츠 동영상이 성공적으로 생성되었습니다! 하단의 다운로드 버튼을 눌러 소장해 보세요.');
+            alert('숏폼 동영상이 성공적으로 생성되었습니다! 하단의 미리보기 재생 또는 다운로드 버튼을 눌러보세요.');
         };
 
-        // 8. Run Animation and Record
-        const startTime = Date.now();
+        // 8. Run Animation and Record locked to AudioContext clock
         recorder.start();
         
         function drawFrame() {
-            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const elapsedSeconds = audioContext.currentTime - audioStartTime;
             
             if (elapsedSeconds >= totalVideoDuration) {
                 recorder.stop();
@@ -757,10 +798,10 @@ async function generateShortsVideo() {
             }
             
             // Draw Canvas Frame
-            renderFrameAtTime(elapsedSeconds);
+            renderFrameAtTime(Math.max(0, elapsedSeconds));
             
             // Update Loading Status Progress
-            const progress = (elapsedSeconds / totalVideoDuration) * 100;
+            const progress = (Math.max(0, elapsedSeconds) / totalVideoDuration) * 100;
             updateProgress(65 + (progress * 0.35), `비디오 프레임 렌더링 중 (${Math.round(progress)}%)...`);
             
             animationFrameId = requestAnimationFrame(drawFrame);

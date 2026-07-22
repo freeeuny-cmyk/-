@@ -77,8 +77,10 @@ body {
 .logo-sub {
     font-size: 11px;
     color: var(--accent-light);
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     font-weight: 500;
+    white-space: nowrap;
+    margin-top: 2px;
 }
 
 .logo-main {
@@ -89,13 +91,8 @@ body {
     background: linear-gradient(90deg, #ffffff 0%, var(--accent-light) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    display: flex;
-    flex-direction: column;
-}
-
-.logo-line {
-    display: block;
     white-space: nowrap;
+    display: block;
 }
 
 .header-badge {
@@ -906,14 +903,28 @@ input[type="file"]::file-selector-button:hover {
 }
 
 @media (max-width: 640px) {
+    .app-header {
+        padding: 10px 14px;
+        margin-bottom: 15px;
+    }
+    .header-logo {
+        gap: 8px;
+        width: 100%;
+    }
+    .leaf-icon {
+        font-size: 22px;
+    }
     .logo-main {
-        font-size: 16px;
+        font-size: 15px;
+        line-height: 1.2;
+        white-space: nowrap;
     }
     .logo-sub {
-        font-size: 10px;
-    }
-    .app-header {
-        padding: 12px 16px;
+        font-size: 9.5px;
+        letter-spacing: -0.2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
