@@ -740,12 +740,15 @@ async function generateShortsVideo() {
             ...recDest.stream.getAudioTracks()
         ]);
 
-        // Select mimeType for recorder
-        let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+        // Select mimeType for recorder (Prioritize MP4 for universal mobile compatibility)
+        let options = { mimeType: 'video/mp4;codecs=avc1,mp4a' };
         if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'video/webm;codecs=vp8,opus' };
+            options = { mimeType: 'video/mp4' };
             if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options = { mimeType: 'video/webm' };
+                options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm' };
+                }
             }
         }
         
@@ -759,7 +762,8 @@ async function generateShortsVideo() {
         };
 
         recorder.onstop = function() {
-            generatedVideoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+            const finalType = recorder.mimeType || 'video/mp4';
+            generatedVideoBlob = new Blob(recordedChunks, { type: finalType });
             generatedVideoUrl = URL.createObjectURL(generatedVideoBlob);
             
             // Clear old preview video element
@@ -1180,16 +1184,16 @@ function togglePreviewPlayback() {
     }
 }
 
-// Download the final generated video file
+// Download the final generated video file in MP4 format
 function downloadVideo() {
     if (!generatedVideoUrl) return;
     
     const a = document.createElement('a');
     a.href = generatedVideoUrl;
     
-    // Save file name with current timestamp
+    // Save file name with current timestamp in MP4 format
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    a.download = `GBAN_Shorts_${dateStr}.webm`;
+    a.download = `GBAN_Shortform_${dateStr}.mp4`;
     
     document.body.appendChild(a);
     a.click();
