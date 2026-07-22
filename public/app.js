@@ -52,9 +52,12 @@ let generatedVideoUrl = null;
 let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 
-// Preload Official Gyeongsangbuk-do Emblem Logo Image
+// Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
 const gbLogoImg = new Image();
 gbLogoImg.src = 'gb_logo.png';
+
+const gbSloganImg = new Image();
+gbSloganImg.src = 'gb_slogan.png';
 
 // Initialize Canvas
 window.addEventListener('DOMContentLoaded', () => {
@@ -1034,9 +1037,44 @@ function renderFrameAtTime(time) {
     drawFixedWatermark(ctx);
 }
 
-// Render Fixed Institution Watermark & Official Logo at Bottom Center
+// Render Fixed Institution Watermark & Official Logo/Slogan on Shortform Video Canvas
 function drawFixedWatermark(ctx) {
     ctx.save();
+
+    // 1. Top-Right Slogan Watermark ("경북의 힘!으로 새로운 대한민국")
+    if (gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
+        const sloganHeight = 36;
+        const sloganWidth = Math.round(sloganHeight * (gbSloganImg.naturalWidth / gbSloganImg.naturalHeight));
+        const sloganX = canvas.width - sloganWidth - 30;
+        const sloganY = 50;
+
+        // Draw translucent dark background pill for slogan legibility over video
+        const bgPaddingX = 14;
+        const bgPaddingY = 6;
+        const bgX = sloganX - bgPaddingX;
+        const bgY = sloganY - bgPaddingY;
+        const bgW = sloganWidth + (bgPaddingX * 2);
+        const bgH = sloganHeight + (bgPaddingY * 2);
+
+        ctx.fillStyle = 'rgba(5, 20, 15, 0.75)';
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(bgX, bgY, bgW, bgH, 16);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.fillRect(bgX, bgY, bgW, bgH);
+            ctx.strokeRect(bgX, bgY, bgW, bgH);
+        }
+
+        ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
+    }
+
+    // 2. Bottom-Center Institution Watermark (Official Blue Rhombus Logo + "경상북도농업기술원")
     const watermarkY = canvas.height - 65;
     const logoText = "경상북도농업기술원";
 
@@ -1053,7 +1091,7 @@ function drawFixedWatermark(ctx) {
 
     // Draw Translucent Rounded Pill Background
     ctx.fillStyle = 'rgba(5, 20, 15, 0.85)';
-    ctx.strokeStyle = 'rgba(16, 185, 129, 0.55)';
+    ctx.strokeStyle = 'rgba(0, 119, 182, 0.6)';
     ctx.lineWidth = 1.5;
     
     if (ctx.roundRect) {
@@ -1074,8 +1112,8 @@ function drawFixedWatermark(ctx) {
     if (gbLogoImg.complete && gbLogoImg.naturalWidth !== 0) {
         ctx.drawImage(gbLogoImg, startX, logoY, logoSize, logoSize);
     } else {
-        // Fallback leaf icon if loading
-        ctx.fillStyle = '#10b981';
+        // Fallback icon if loading
+        ctx.fillStyle = '#0077b6';
         ctx.font = '900 19px "Font Awesome 6 Free"';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
@@ -1087,8 +1125,6 @@ function drawFixedWatermark(ctx) {
     ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(logoText, startX + logoSize + spacing, watermarkY);
-
     ctx.restore();
 }
 
