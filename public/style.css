@@ -69,10 +69,13 @@ body {
 }
 
 .header-logo-img {
-    width: 36px;
-    height: 36px;
+    height: 42px;
+    width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 119, 182, 0.3));
+    filter: drop-shadow(0 2px 4px rgba(0, 119, 182, 0.2));
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transform: translateZ(0);
 }
 
 .header-slogan {
@@ -83,10 +86,13 @@ body {
 }
 
 .header-slogan-img {
-    height: 38px;
+    height: 40px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    transform: translateZ(0);
 }
 
 .logo-text {

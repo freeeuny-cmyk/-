@@ -1040,6 +1040,8 @@ function renderFrameAtTime(time) {
 // Render Fixed Institution Watermark & Official Logo/Slogan on Shortform Video Canvas
 function drawFixedWatermark(ctx) {
     ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     // 1. Top-Right Slogan Watermark ("경북의 힘!으로 새로운 대한민국")
     if (gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
