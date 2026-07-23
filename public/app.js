@@ -54,10 +54,10 @@ let totalVideoDuration = 0; // Total duration of the video in seconds
 
 // Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
 const gbLogoImg = new Image();
-gbLogoImg.src = 'gb_logo.png?v=20260722_hd';
+gbLogoImg.src = 'gb_logo.png?v=20260723_clean';
 
 const gbSloganImg = new Image();
-gbSloganImg.src = 'gb_slogan.png?v=20260722_hd';
+gbSloganImg.src = 'gb_slogan.png?v=20260723_v2';
 
 // Initialize Canvas
 window.addEventListener('DOMContentLoaded', () => {
@@ -1082,9 +1082,15 @@ function drawFixedWatermark(ctx) {
 
     ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
     const textWidth = ctx.measureText(logoText).width;
-    const logoSize = 24; // 24x24 emblem
+    
+    // Calculate logo aspect ratio
+    const logoHeight = 22;
+    const logoWidth = (gbLogoImg.complete && gbLogoImg.naturalWidth && gbLogoImg.naturalHeight)
+        ? logoHeight * (gbLogoImg.naturalWidth / gbLogoImg.naturalHeight)
+        : 33;
+
     const spacing = 10;
-    const totalWidth = logoSize + spacing + textWidth;
+    const totalWidth = logoWidth + spacing + textWidth;
     const pillPaddingX = 16;
     const boxWidth = totalWidth + (pillPaddingX * 2);
     const boxHeight = 38;
@@ -1108,11 +1114,11 @@ function drawFixedWatermark(ctx) {
     }
 
     const startX = boxX + pillPaddingX;
-    const logoY = watermarkY - (logoSize / 2);
+    const logoY = watermarkY - (logoHeight / 2);
 
     // Draw Official Gyeongsangbuk-do Emblem Logo Image
     if (gbLogoImg.complete && gbLogoImg.naturalWidth !== 0) {
-        ctx.drawImage(gbLogoImg, startX, logoY, logoSize, logoSize);
+        ctx.drawImage(gbLogoImg, startX, logoY, logoWidth, logoHeight);
     } else {
         // Fallback icon if loading
         ctx.fillStyle = '#0077b6';
@@ -1123,10 +1129,12 @@ function drawFixedWatermark(ctx) {
     }
 
     // Draw "경상북도농업기술원" Text
+    const textX = startX + logoWidth + spacing;
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
+    ctx.fillText(logoText, textX, watermarkY);
     ctx.restore();
 }
 
