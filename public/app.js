@@ -54,9 +54,11 @@ let totalVideoDuration = 0; // Total duration of the video in seconds
 
 // Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
 const gbLogoImg = new Image();
-gbLogoImg.src = 'https://raw.githubusercontent.com/freeeuny-cmyk/-/main/public/gb_logo.png';
+gbLogoImg.crossOrigin = 'anonymous';
+gbLogoImg.src = 'gb_logo.png?v=20260723_clean';
 
 const gbSloganImg = new Image();
+gbSloganImg.crossOrigin = 'anonymous';
 gbSloganImg.src = 'gb_slogan.png?v=20260723_v2';
 
 // Initialize Canvas
@@ -246,6 +248,7 @@ function processImageFiles(files) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
+            img.crossOrigin = 'anonymous';
             img.onload = function() {
                 images.push({
                     img: img,
