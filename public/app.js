@@ -632,16 +632,16 @@ async function generateShortsVideo() {
             }
             
             // Save or clear API key on generate
-            const apiKey = openaiKeyInput.value.trim();
+            let apiKey = openaiKeyInput.value.trim();
+            let effectiveVoice = voice;
             
-            if (voice !== 'google' && !apiKey) {
-                throw new Error('OPENAI_KEY_REQUIRED');
+            if (voice !== 'google' && voice !== 'none' && !apiKey) {
+                console.warn('OpenAI key missing, soft falling back to free voice');
+                effectiveVoice = 'google';
             }
 
-            if (saveKeyCheckbox.checked) {
+            if (saveKeyCheckbox.checked && apiKey) {
                 localStorage.setItem('openai_api_key', apiKey);
-            } else {
-                localStorage.removeItem('openai_api_key');
             }
 
             // Call TTS backend with Robust Fallback (handles static hosting environments like Render)
@@ -860,13 +860,18 @@ async function generateShortsVideo() {
     } catch (err) {
         console.error("Rendering error:", err);
         renderingOverlay.style.display = 'none';
-        if (audioContext && audioContext.state !== 'closed') {
-            audioContext.close();
+        btnPreviewPlay.disabled = false;
+        btnDownload.disabled = false;
+
+        if (typeof audioContext !== 'undefined' && audioContext && audioContext.state !== 'closed') {
+            try { audioContext.close(); } catch(e) {}
         }
-        if (err.message === 'OPENAI_KEY_REQUIRED') {
+        
+        const detailMessage = (err && err.message) ? err.message : String(err);
+        if (detailMessage === 'OPENAI_KEY_REQUIRED') {
             alert('오픈AI 고품질 목소리를 사용하시려면 OpenAI API Key를 입력하셔야 합니다.\n(무료 음성을 사용하시려면 목소리 선택에서 "기본 여성 목소리(무료)"를 선택해 주세요.)');
         } else {
-            alert('동영상을 제작하는 도중 오류가 발생했습니다. 다시 시도해 주세요.');
+            alert(`동영상 제작 도중 오류가 발생했습니다.\n\n[오류 원인]: ${detailMessage}\n\n(문제가 지속되는 경우 '기본 여성 목소리(무료)' 선택 후 다시 시도해 보세요.)`);
         }
     }
 }
