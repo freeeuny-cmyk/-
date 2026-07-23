@@ -55,11 +55,17 @@ let totalVideoDuration = 0; // Total duration of the video in seconds
 // Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
 const gbLogoImg = new Image();
 gbLogoImg.crossOrigin = 'anonymous';
-gbLogoImg.src = 'gb_logo_clean.png?v=20260723_clean';
+gbLogoImg.src = 'gb_logo.png?v=20260723_v18';
+gbLogoImg.onload = () => {
+    if (ctx && typeof drawPlaceholder === 'function') drawPlaceholder();
+};
 
 const gbSloganImg = new Image();
 gbSloganImg.crossOrigin = 'anonymous';
-gbSloganImg.src = 'gb_slogan.png?v=20260723_v2';
+gbSloganImg.src = 'gb_solgan.png?v=20260723_v18';
+gbSloganImg.onload = () => {
+    if (ctx && typeof drawPlaceholder === 'function') drawPlaceholder();
+};
 
 // Initialize Canvas
 window.addEventListener('DOMContentLoaded', () => {
@@ -1085,35 +1091,35 @@ function drawFixedWatermark(ctx) {
     ctx.imageSmoothingQuality = 'high';
 
     // Drop shadow for legibility over video background without black box
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 6;
-    ctx.shadowOffsetX = 1;
-    ctx.shadowOffsetY = 1;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 1.5;
+    ctx.shadowOffsetY = 1.5;
 
     // 1. Top-Right Slogan Watermark ("경북의 힘!으로 새로운 대한민국")
     if (gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
-        const sloganHeight = 36;
+        const sloganHeight = 44;
         const sloganWidth = Math.round(sloganHeight * (gbSloganImg.naturalWidth / gbSloganImg.naturalHeight));
-        const sloganX = canvas.width - sloganWidth - 30;
-        const sloganY = 50;
+        const sloganX = canvas.width - sloganWidth - 36;
+        const sloganY = 55;
 
         ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
     }
 
-    // 2. Bottom-Center Institution Watermark (Official Blue Rhombus Logo + "경상북도농업기술원")
+    // 2. Bottom-Center Institution Watermark (Official Blue Wave Logo + "경상북도농업기술원")
     const watermarkY = canvas.height - 65;
     const logoText = "경상북도농업기술원";
 
-    ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
+    ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
     const textWidth = ctx.measureText(logoText).width;
     
     // Calculate logo aspect ratio
-    const logoHeight = 22;
+    const logoHeight = 28;
     const logoWidth = (gbLogoImg.complete && gbLogoImg.naturalWidth && gbLogoImg.naturalHeight)
-        ? logoHeight * (gbLogoImg.naturalWidth / gbLogoImg.naturalHeight)
-        : 33;
+        ? Math.round(logoHeight * (gbLogoImg.naturalWidth / gbLogoImg.naturalHeight))
+        : 44;
 
-    const spacing = 10;
+    const spacing = 12;
     const totalWidth = logoWidth + spacing + textWidth;
     const startX = (canvas.width - totalWidth) / 2;
     const logoY = watermarkY - (logoHeight / 2);
@@ -1124,7 +1130,7 @@ function drawFixedWatermark(ctx) {
     } else {
         // Fallback icon if loading
         ctx.fillStyle = '#0077b6';
-        ctx.font = '900 19px "Font Awesome 6 Free"';
+        ctx.font = '900 23px "Font Awesome 6 Free"';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('\uf06c', startX, watermarkY);
@@ -1133,7 +1139,7 @@ function drawFixedWatermark(ctx) {
     // Draw "경상북도농업기술원" Text
     const textX = startX + logoWidth + spacing;
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 19px "Noto Sans KR", sans-serif';
+    ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(logoText, textX, watermarkY);
