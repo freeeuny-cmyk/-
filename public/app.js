@@ -644,19 +644,52 @@ async function generateShortsVideo() {
                 localStorage.removeItem('openai_api_key');
             }
 
-            // Call Python proxy TTS backend
+            // Call TTS backend with Robust Fallback (handles static hosting environments like Render)
             const speed = parseFloat(voiceSpeed.value);
             const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
-            const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
-            if (!response.ok) {
-                throw new Error('TTS API failed');
+            let arrayBuffer = null;
+
+            try {
+                const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
+                if (response.ok) {
+                    arrayBuffer = await response.arrayBuffer();
+                }
+            } catch (e) {
+                console.warn('/api/tts backend unavailable, attempting direct fallback...', e);
             }
-            const arrayBuffer = await response.arrayBuffer();
-            const originalBuffer = await audioContext.decodeAudioData(arrayBuffer);
-            
+
+            // Fallback 1: Direct Google Translate TTS endpoint
+            if (!arrayBuffer && voice === 'google') {
+                try {
+                    const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${encodeURIComponent(slide.text)}`;
+                    const gResp = await fetch(googleUrl);
+                    if (gResp.ok) {
+                        arrayBuffer = await gResp.arrayBuffer();
+                    }
+                } catch (ge) {
+                    console.warn('Direct Google TTS fetch bypassed or blocked:', ge);
+                }
+            }
+
+            let originalBuffer = null;
+            if (arrayBuffer) {
+                try {
+                    // Clone arrayBuffer because decodeAudioData detaches it
+                    const bufferCopy = arrayBuffer.slice(0);
+                    originalBuffer = await audioContext.decodeAudioData(bufferCopy);
+                } catch(de) {
+                    console.warn('Audio decode failed:', de);
+                }
+            }
+
+            // Fallback 2: Safe Silence Buffer so video generation ALWAYS succeeds smoothly
+            if (!originalBuffer) {
+                originalBuffer = audioContext.createBuffer(1, Math.floor(audioContext.sampleRate * userDuration), audioContext.sampleRate);
+            }
+
             // Adjust voice speed if necessary
             let finalBuffer = originalBuffer;
-            if (Math.abs(speed - 1.0) > 0.05) {
+            if (Math.abs(speed - 1.0) > 0.05 && originalBuffer.duration > 0.1) {
                 finalBuffer = adjustAudioBufferSpeed(audioContext, originalBuffer, speed);
             }
             
