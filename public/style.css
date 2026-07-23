@@ -77,7 +77,7 @@ body {
 
 .header-logo-img {
     height: 40px;
-    width: 40px;
+    width: auto;
     object-fit: contain;
     flex-shrink: 0;
 }
@@ -884,7 +884,7 @@ canvas#shorts-canvas {
 
     .header-logo-img {
         height: 34px;
-        width: 34px;
+        width: auto;
     }
 
     .header-right {
@@ -931,7 +931,7 @@ canvas#shorts-canvas {
 
     .header-logo-img {
         height: 30px;
-        width: 30px;
+        width: auto;
     }
 
     .header-right {
@@ -977,7 +977,7 @@ canvas#shorts-canvas {
 
     .header-logo-img {
         height: 28px;
-        width: 28px;
+        width: auto;
     }
 
     .header-right {
