@@ -56,17 +56,21 @@ body {
     gap: 24px;
 }
 
-/* Header Navbar */
+/* Header Navbar Card */
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 12px 20px;
-    background: var(--bg-main);
-    border-bottom: 1px solid var(--border-main);
-    margin-bottom: 4px;
+    padding: 14px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: 20px;
+    box-shadow: var(--shadow-card);
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .header-left {
@@ -128,13 +132,16 @@ body {
     position: relative;
     background: var(--bg-hero);
     border: 1px solid var(--border-main);
-    border-radius: 24px;
+    border-radius: 20px;
     overflow: hidden;
-    padding: 44px 36px;
-    min-height: 180px;
+    padding: 36px 32px;
+    min-height: 170px;
     display: flex;
     align-items: center;
     box-shadow: var(--shadow-card);
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .hero-bg-art {
@@ -206,10 +213,13 @@ body {
 .panel-card {
     background: var(--bg-card);
     border: 1px solid var(--border-main);
-    border-radius: 22px;
+    border-radius: 20px;
     padding: 28px 32px;
     box-shadow: var(--shadow-card);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .panel-card:hover {
@@ -796,9 +806,11 @@ canvas#shorts-canvas {
 .app-footer {
     background: #e8e4da;
     border-radius: 20px;
-    padding: 24px 32px;
-    margin-top: 16px;
+    padding: 20px 24px;
     border: 1px solid #ded9cb;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
 }
 
 .footer-content {
@@ -838,6 +850,15 @@ canvas#shorts-canvas {
         gap: 16px;
     }
 
+    .app-header,
+    .hero-banner,
+    .panel-card,
+    .app-footer {
+        width: 100%;
+        box-sizing: border-box;
+        border-radius: 16px;
+    }
+
     .app-main {
         grid-template-columns: 1fr;
     }
@@ -846,9 +867,12 @@ canvas#shorts-canvas {
         position: static;
     }
 
+    .panel-card {
+        padding: 22px 20px;
+    }
+
     .hero-banner {
         padding: 24px 20px;
-        border-radius: 16px;
     }
 
     .hero-card-overlay {
@@ -864,8 +888,12 @@ canvas#shorts-canvas {
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
+        padding: 14px 18px;
         gap: 12px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-main);
+        border-radius: 16px;
+        box-shadow: var(--shadow-card);
     }
 
     .header-left {
@@ -911,8 +939,12 @@ canvas#shorts-canvas {
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 12px;
+        padding: 12px 14px;
         gap: 8px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-main);
+        border-radius: 16px;
+        box-shadow: var(--shadow-card);
     }
 
     .header-left {
@@ -963,8 +995,12 @@ canvas#shorts-canvas {
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
-        padding: 8px 10px;
+        padding: 10px 12px;
         gap: 6px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-main);
+        border-radius: 16px;
+        box-shadow: var(--shadow-card);
     }
 
     .header-left {
