@@ -411,8 +411,8 @@ function updateLivePreview() {
 function getScriptSentences() {
     const text = scriptInput.value.trim();
     if (!text) {
-        // Default text if empty
-        return ["경상북도농업기술원입니다. 멋진 우리 농작물과 연구 성과를 소개합니다."];
+        // Return empty array when no text is entered so no captions/subtitles appear
+        return [];
     }
     
     // Split by newlines so each line corresponds to a slide caption
@@ -427,7 +427,7 @@ function getScriptSentences() {
         }
     });
     
-    return sentences.length > 0 ? sentences : ["경상북도농업기술원입니다. 멋진 우리 농작물과 연구 성과를 소개합니다."];
+    return sentences;
 }
 
 // Synthesize Ambient background music loops using Web Audio API
