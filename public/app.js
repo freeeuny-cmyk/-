@@ -55,7 +55,7 @@ let totalVideoDuration = 0; // Total duration of the video in seconds
 // Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
 const gbLogoImg = new Image();
 gbLogoImg.crossOrigin = 'anonymous';
-gbLogoImg.src = 'gb_logo.png?v=20260723_clean';
+gbLogoImg.src = 'gb_logo_clean.png?v=20260723_clean';
 
 const gbSloganImg = new Image();
 gbSloganImg.crossOrigin = 'anonymous';
@@ -90,7 +90,7 @@ function drawPlaceholder() {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 36px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('AI 숏폼 퀵스튜디오', canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText('', canvas.width / 2, canvas.height / 2 - 40);
     
     ctx.fillStyle = '#10b981';
     ctx.font = 'bold 24px "Noto Sans KR", sans-serif';
