@@ -848,8 +848,8 @@ canvas#shorts-canvas {
     .app-container {
         width: 100% !important;
         max-width: 100% !important;
-        padding: 16px 12px !important;
-        gap: 16px !important;
+        padding: 12px 6px !important;
+        gap: 14px !important;
         box-sizing: border-box !important;
         align-items: stretch !important;
     }
@@ -957,13 +957,26 @@ canvas#shorts-canvas {
 }
 
 @media (max-width: 600px) {
+    .app-container {
+        padding: 8px 4px !important;
+        gap: 12px !important;
+    }
+
+    .panel-card {
+        padding: 16px 12px !important;
+    }
+
+    .hero-banner {
+        padding: 18px 14px !important;
+    }
+
     .app-header {
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 14px;
-        gap: 8px;
+        padding: 10px 10px;
+        gap: 6px;
         background: var(--bg-card);
         border: 1px solid var(--border-main);
         border-radius: 16px;
@@ -1052,16 +1065,25 @@ canvas#shorts-canvas {
 }
 
 @media (max-width: 440px) {
+    .app-container {
+        padding: 6px 3px !important;
+        gap: 10px !important;
+    }
+
+    .panel-card {
+        padding: 14px 10px !important;
+    }
+
     .app-header {
         flex-direction: row;
         flex-wrap: nowrap;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 12px;
-        gap: 6px;
+        padding: 8px 8px;
+        gap: 4px;
         background: var(--bg-card);
         border: 1px solid var(--border-main);
-        border-radius: 16px;
+        border-radius: 14px;
         box-shadow: var(--shadow-card);
     }
 
