@@ -92,22 +92,22 @@ body {
 
 .brand-title {
     font-family: 'Outfit', 'Noto Sans KR', sans-serif;
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.3px;
-    line-height: 1.2;
+    line-height: 1.25;
     white-space: nowrap;
     word-break: keep-all;
 }
 
 .brand-badge {
     font-family: 'Outfit', 'Noto Sans KR', sans-serif;
-    font-size: 14px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--accent-primary);
-    letter-spacing: -0.2px;
-    line-height: 1.2;
+    letter-spacing: -0.3px;
+    line-height: 1.25;
     white-space: nowrap;
     word-break: keep-all;
 }
@@ -877,7 +877,7 @@ canvas#shorts-canvas {
         text-align: left;
     }
 
-    .brand-title {
+    .brand-title, .brand-badge {
         font-size: 18px;
         white-space: nowrap;
         word-break: keep-all;
@@ -924,7 +924,7 @@ canvas#shorts-canvas {
         text-align: left;
     }
 
-    .brand-title {
+    .brand-title, .brand-badge {
         font-size: 16px;
         white-space: nowrap;
         word-break: keep-all;
@@ -970,7 +970,7 @@ canvas#shorts-canvas {
         text-align: center;
     }
 
-    .brand-title {
+    .brand-title, .brand-badge {
         font-size: 15px;
         white-space: nowrap;
         word-break: keep-all;
