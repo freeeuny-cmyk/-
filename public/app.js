@@ -1084,35 +1084,18 @@ function drawFixedWatermark(ctx) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
+    // Drop shadow for legibility over video background without black box
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+
     // 1. Top-Right Slogan Watermark ("경북의 힘!으로 새로운 대한민국")
     if (gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
         const sloganHeight = 36;
         const sloganWidth = Math.round(sloganHeight * (gbSloganImg.naturalWidth / gbSloganImg.naturalHeight));
         const sloganX = canvas.width - sloganWidth - 30;
         const sloganY = 50;
-
-        // Draw translucent dark background pill for slogan legibility over video
-        const bgPaddingX = 14;
-        const bgPaddingY = 6;
-        const bgX = sloganX - bgPaddingX;
-        const bgY = sloganY - bgPaddingY;
-        const bgW = sloganWidth + (bgPaddingX * 2);
-        const bgH = sloganHeight + (bgPaddingY * 2);
-
-        ctx.fillStyle = 'rgba(5, 20, 15, 0.75)';
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.lineWidth = 1;
-        
-        if (ctx.roundRect) {
-            ctx.beginPath();
-            ctx.roundRect(bgX, bgY, bgW, bgH, 16);
-            ctx.fill();
-            ctx.stroke();
-        } else {
-            ctx.beginPath();
-            ctx.fillRect(bgX, bgY, bgW, bgH);
-            ctx.strokeRect(bgX, bgY, bgW, bgH);
-        }
 
         ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
     }
@@ -1132,29 +1115,7 @@ function drawFixedWatermark(ctx) {
 
     const spacing = 10;
     const totalWidth = logoWidth + spacing + textWidth;
-    const pillPaddingX = 16;
-    const boxWidth = totalWidth + (pillPaddingX * 2);
-    const boxHeight = 38;
-    const boxX = (canvas.width - boxWidth) / 2;
-    const boxY = watermarkY - (boxHeight / 2);
-
-    // Draw Translucent Rounded Pill Background
-    ctx.fillStyle = 'rgba(5, 20, 15, 0.85)';
-    ctx.strokeStyle = 'rgba(0, 119, 182, 0.6)';
-    ctx.lineWidth = 1.5;
-    
-    if (ctx.roundRect) {
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 19);
-        ctx.fill();
-        ctx.stroke();
-    } else {
-        ctx.beginPath();
-        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-    }
-
-    const startX = boxX + pillPaddingX;
+    const startX = (canvas.width - totalWidth) / 2;
     const logoY = watermarkY - (logoHeight / 2);
 
     // Draw Official Gyeongsangbuk-do Emblem Logo Image
@@ -1176,6 +1137,7 @@ function drawFixedWatermark(ctx) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(logoText, textX, watermarkY);
+
     ctx.restore();
 }
 
