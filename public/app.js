@@ -296,7 +296,7 @@ function renderPreviews() {
         infoDescription.innerText = `사진 ${images.length}장이 준비되었습니다. 대본을 입력하고 동영상을 생성해 보세요!`;
     } else {
         drawPlaceholder();
-        infoDescription.innerText = '사진 3~4장을 업로드하고 숏폼을 만들어보세요!';
+        infoDescription.innerText = '사진을 업로드하고 숏폼을 만들어보세요!';
     }
 }
 
