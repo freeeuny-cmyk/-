@@ -222,14 +222,6 @@ function setupEventListeners() {
     });
 
     // Upload drag and drop
-    uploadZone.addEventListener('click', (e) => {
-        if (e.target !== fileInput) {
-            fileInput.click();
-        }
-    });
-    fileInput.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
     fileInput.addEventListener('change', handleFileSelect);
 
     uploadZone.addEventListener('dragover', (e) => {
@@ -244,7 +236,7 @@ function setupEventListeners() {
     uploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length > 0) {
+        if (e.dataTransfer && e.dataTransfer.files.length > 0) {
             processImageFiles(e.dataTransfer.files);
         }
     });
@@ -583,10 +575,22 @@ function handleFileSelect(e) {
 
 // Load and display selected images
 function processImageFiles(files) {
+    if (!files || files.length === 0) return;
     let loadedCount = 0;
-    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.includes('heic') || f.type.includes('heif'));
     
-    if (filesArray.length === 0) return;
+    // Resilient image filter for mobile camera photos & file managers with empty/generic MIME types
+    const filesArray = Array.from(files).filter(f => {
+        if (!f) return false;
+        if (f.type && f.type.startsWith('image/')) return true;
+        if (f.name && /\.(jpe?g|png|gif|webp|heic|heif|bmp|svg|tiff?)$/i.test(f.name)) return true;
+        // Accept unclassified or octet-stream files selected from camera roll
+        return !f.type || f.type === 'application/octet-stream' || f.type === '';
+    });
+    
+    if (filesArray.length === 0) {
+        alert('선택한 파일 중 이미지 파일(JPG, PNG 등)을 찾을 수 없습니다.');
+        return;
+    }
 
     filesArray.forEach(file => {
         const reader = new FileReader();
@@ -596,9 +600,16 @@ function processImageFiles(files) {
             img.onload = function() {
                 images.push({
                     img: img,
-                    name: file.name,
+                    name: file.name || '사진',
                     id: Date.now() + Math.random().toString(36).substr(2, 5)
                 });
+                loadedCount++;
+                if (loadedCount === filesArray.length) {
+                    renderPreviews();
+                }
+            };
+            img.onerror = function() {
+                console.warn('Failed to load image file:', file.name);
                 loadedCount++;
                 if (loadedCount === filesArray.length) {
                     renderPreviews();
