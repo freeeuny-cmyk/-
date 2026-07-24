@@ -36,6 +36,11 @@ const progressPercentage = document.getElementById('progress-percentage');
 const infoDescription = document.getElementById('info-description');
 const playOverlayBtn = document.getElementById('play-overlay-btn');
 
+// Audio Preview DOM Elements
+const btnPreviewBgm = document.getElementById('btn-preview-bgm');
+const btnPreviewVoice = document.getElementById('btn-preview-voice');
+const btnPreviewAll = document.getElementById('btn-preview-all');
+
 // New Subtitle & Duration Settings DOM Elements
 const subtitlePosition = document.getElementById('subtitle-position');
 const subtitleColorPreset = document.getElementById('subtitle-color-preset');
@@ -240,6 +245,18 @@ function setupEventListeners() {
         slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
         updateLivePreview();
     });
+
+    // Sound Preview Buttons
+    if (btnPreviewBgm) btnPreviewBgm.addEventListener('click', toggleBgmPreview);
+    if (btnPreviewVoice) btnPreviewVoice.addEventListener('click', toggleVoicePreview);
+    if (btnPreviewAll) btnPreviewAll.addEventListener('click', toggleAllPreview);
+
+    bgmSelect.addEventListener('change', () => {
+        stopAllAudioPreviews();
+    });
+    voiceSelect.addEventListener('change', () => {
+        stopAllAudioPreviews();
+    });
 }
 
 // Handle Custom BGM file loading
@@ -261,6 +278,247 @@ function handleCustomBgmUpload(e) {
             });
     };
     reader.readAsArrayBuffer(file);
+}
+
+// Sound Preview State Variables
+let bgmPreviewAudioCtx = null;
+let bgmPreviewSource = null;
+let isBgmPreviewPlaying = false;
+
+let voicePreviewAudioCtx = null;
+let voicePreviewSource = null;
+let isVoicePreviewPlaying = false;
+
+// 1. Toggle BGM Preview
+function toggleBgmPreview() {
+    if (isBgmPreviewPlaying) {
+        stopBgmPreview();
+        if (!isVoicePreviewPlaying && btnPreviewAll) {
+            btnPreviewAll.classList.remove('playing');
+            btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+            btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
+        }
+        return;
+    }
+
+    if (bgmSelect.value === 'none') {
+        alert('선택된 배경음악이 없습니다. 배경음악 종류를 선택해 주세요.');
+        return;
+    }
+
+    if (bgmSelect.value === 'custom' && !bgmAudioBuffer) {
+        alert('내 컴퓨터에서 BGM 오디오 파일을 선택한 후 미리듣기를 실행하세요.');
+        return;
+    }
+
+    bgmPreviewAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (bgmPreviewAudioCtx.state === 'suspended') {
+        bgmPreviewAudioCtx.resume();
+    }
+
+    isBgmPreviewPlaying = true;
+    if (btnPreviewBgm) {
+        btnPreviewBgm.classList.add('playing');
+        btnPreviewBgm.querySelector('span').innerText = '배경음악 정지';
+        btnPreviewBgm.querySelector('i').className = 'fa-solid fa-square';
+    }
+
+    if (bgmSelect.value === 'custom' && bgmAudioBuffer) {
+        bgmPreviewSource = bgmPreviewAudioCtx.createBufferSource();
+        bgmPreviewSource.buffer = bgmAudioBuffer;
+        bgmPreviewSource.loop = true;
+
+        const gainNode = bgmPreviewAudioCtx.createGain();
+        gainNode.gain.value = parseFloat(bgmVolume.value);
+        activeBgmGainNode = gainNode;
+
+        bgmPreviewSource.connect(gainNode);
+        gainNode.connect(bgmPreviewAudioCtx.destination);
+        bgmPreviewSource.start(0);
+    } else {
+        const synthBgmNode = createSynthBgmSource(bgmPreviewAudioCtx, 0, 90);
+        synthBgmNode.connect(bgmPreviewAudioCtx.destination);
+    }
+}
+
+function stopBgmPreview() {
+    if (bgmPreviewAudioCtx && bgmPreviewAudioCtx.state !== 'closed') {
+        try { bgmPreviewAudioCtx.close(); } catch(e) {}
+    }
+    bgmPreviewAudioCtx = null;
+    bgmPreviewSource = null;
+    isBgmPreviewPlaying = false;
+    if (btnPreviewBgm) {
+        btnPreviewBgm.classList.remove('playing');
+        btnPreviewBgm.querySelector('span').innerText = '배경음악 미리듣기';
+        btnPreviewBgm.querySelector('i').className = 'fa-solid fa-music';
+    }
+}
+
+// 2. Toggle Voice (TTS) Preview
+async function toggleVoicePreview() {
+    if (isVoicePreviewPlaying) {
+        stopVoicePreview();
+        if (!isBgmPreviewPlaying && btnPreviewAll) {
+            btnPreviewAll.classList.remove('playing');
+            btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+            btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
+        }
+        return;
+    }
+
+    const voice = voiceSelect.value;
+    if (voice === 'none') {
+        alert('선택된 AI 목소리가 없습니다. 목소리를 선택해 주세요.');
+        return;
+    }
+
+    const sampleText = getScriptSentences()[0] || '안녕하세요! 경상북도농업기술원 숏폼 AI 목소리 샘플입니다.';
+
+    isVoicePreviewPlaying = true;
+    if (btnPreviewVoice) {
+        btnPreviewVoice.classList.add('loading');
+        btnPreviewVoice.querySelector('span').innerText = '음성 생성 중...';
+        btnPreviewVoice.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
+    }
+
+    voicePreviewAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (voicePreviewAudioCtx.state === 'suspended') {
+        try { await voicePreviewAudioCtx.resume(); } catch(e) {}
+    }
+
+    const speed = parseFloat(voiceSpeed.value);
+    let apiKey = openaiKeyInput.value.trim();
+    const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
+    let arrayBuffer = null;
+
+    try {
+        const response = await fetch(`/api/tts?text=${encodeURIComponent(sampleText)}${keyParam}`);
+        if (response.ok) {
+            arrayBuffer = await response.arrayBuffer();
+        }
+    } catch (e) {}
+
+    if (!arrayBuffer && voice !== 'google' && voice !== 'none' && apiKey) {
+        try {
+            const openAiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'tts-1',
+                    input: sampleText,
+                    voice: voice
+                })
+            });
+            if (openAiResponse.ok) {
+                arrayBuffer = await openAiResponse.arrayBuffer();
+            }
+        } catch (oaiErr) {}
+    }
+
+    if (!arrayBuffer && voice !== 'none') {
+        try {
+            const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${encodeURIComponent(sampleText)}`;
+            const gResp = await fetch(googleUrl);
+            if (gResp.ok) {
+                arrayBuffer = await gResp.arrayBuffer();
+            }
+        } catch (ge) {}
+    }
+
+    if (btnPreviewVoice) {
+        btnPreviewVoice.classList.remove('loading');
+    }
+
+    if (!arrayBuffer || !isVoicePreviewPlaying) {
+        stopVoicePreview();
+        return;
+    }
+
+    try {
+        const bufferCopy = arrayBuffer.slice(0);
+        const decodedBuffer = await new Promise((resolve) => {
+            voicePreviewAudioCtx.decodeAudioData(bufferCopy, resolve, () => resolve(null));
+        });
+
+        if (!decodedBuffer || !isVoicePreviewPlaying) {
+            stopVoicePreview();
+            return;
+        }
+
+        let finalBuffer = decodedBuffer;
+        if (Math.abs(speed - 1.0) > 0.05 && decodedBuffer.duration > 0.1) {
+            finalBuffer = adjustAudioBufferSpeed(voicePreviewAudioCtx, decodedBuffer, speed);
+        }
+
+        voicePreviewSource = voicePreviewAudioCtx.createBufferSource();
+        voicePreviewSource.buffer = finalBuffer;
+        voicePreviewSource.connect(voicePreviewAudioCtx.destination);
+
+        if (btnPreviewVoice) {
+            btnPreviewVoice.classList.add('playing');
+            btnPreviewVoice.querySelector('span').innerText = '목소리 정지';
+            btnPreviewVoice.querySelector('i').className = 'fa-solid fa-square';
+        }
+
+        voicePreviewSource.onended = () => {
+            stopVoicePreview();
+            if (!isBgmPreviewPlaying && btnPreviewAll) {
+                btnPreviewAll.classList.remove('playing');
+                btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+                btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
+            }
+        };
+
+        voicePreviewSource.start(0);
+    } catch (err) {
+        console.error('Voice preview error:', err);
+        stopVoicePreview();
+    }
+}
+
+function stopVoicePreview() {
+    if (voicePreviewAudioCtx && voicePreviewAudioCtx.state !== 'closed') {
+        try { voicePreviewAudioCtx.close(); } catch(e) {}
+    }
+    voicePreviewAudioCtx = null;
+    voicePreviewSource = null;
+    isVoicePreviewPlaying = false;
+    if (btnPreviewVoice) {
+        btnPreviewVoice.classList.remove('playing', 'loading');
+        btnPreviewVoice.querySelector('span').innerText = '목소리 미리듣기';
+        btnPreviewVoice.querySelector('i').className = 'fa-solid fa-volume-high';
+    }
+}
+
+// 3. Toggle Combined All Preview (BGM + Voice)
+function toggleAllPreview() {
+    if (isBgmPreviewPlaying || isVoicePreviewPlaying) {
+        stopAllAudioPreviews();
+        return;
+    }
+
+    toggleBgmPreview();
+    toggleVoicePreview();
+
+    if (btnPreviewAll) {
+        btnPreviewAll.classList.add('playing');
+        btnPreviewAll.querySelector('span').innerText = '전체 정지';
+        btnPreviewAll.querySelector('i').className = 'fa-solid fa-square';
+    }
+}
+
+function stopAllAudioPreviews() {
+    stopBgmPreview();
+    stopVoicePreview();
+    if (btnPreviewAll) {
+        btnPreviewAll.classList.remove('playing');
+        btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+        btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
+    }
 }
 
 // File input selection
@@ -734,6 +992,9 @@ async function generateShortsVideo() {
         window.previewVideoEl = null;
     }
     
+    // Stop any active sound previews
+    stopAllAudioPreviews();
+
     // Show Loading/Rendering screen overlay
     renderingOverlay.style.display = 'flex';
     updateProgress(0, '대본 분석 및 자막 생성 중...');
