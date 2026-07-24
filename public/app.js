@@ -49,6 +49,7 @@ const slideDurationVal = slideDuration.nextElementSibling;
 // Video Generation Variables
 let generatedVideoBlob = null;
 let generatedVideoUrl = null;
+let recordedMimeType = '';
 let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 
@@ -779,19 +780,30 @@ async function generateShortsVideo() {
             ...recDest.stream.getAudioTracks()
         ]);
 
-        // Select mimeType for recorder (Prioritize MP4 for universal mobile compatibility)
-        let options = { mimeType: 'video/mp4;codecs=avc1,mp4a' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'video/mp4' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                options = { mimeType: 'video/webm;codecs=vp9,opus' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'video/webm' };
-                }
+        // Select mimeType for recorder (Prioritize AAC/MP4 for universal mobile audio/video compatibility)
+        let selectedType = '';
+        const candidateTypes = [
+            'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+            'video/mp4;codecs=avc1,mp4a.40.2',
+            'video/mp4;codecs=avc1,aac',
+            'video/mp4;codecs=h264,aac',
+            'video/mp4;codecs=avc1',
+            'video/mp4',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp9,opus',
+            'video/webm'
+        ];
+
+        for (const t of candidateTypes) {
+            if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) {
+                selectedType = t;
+                break;
             }
         }
-        
-        const recorder = new MediaRecorder(combinedStream, options);
+
+        let recorderOptions = selectedType ? { mimeType: selectedType } : {};
+        const recorder = new MediaRecorder(combinedStream, recorderOptions);
+        recordedMimeType = recorder.mimeType || selectedType || 'video/mp4';
         const recordedChunks = [];
         
         recorder.ondataavailable = function(e) {
@@ -801,7 +813,7 @@ async function generateShortsVideo() {
         };
 
         recorder.onstop = function() {
-            const finalType = recorder.mimeType || 'video/mp4';
+            const finalType = recorder.mimeType || recordedMimeType || 'video/mp4';
             generatedVideoBlob = new Blob(recordedChunks, { type: finalType });
             generatedVideoUrl = URL.createObjectURL(generatedVideoBlob);
             
@@ -1233,16 +1245,20 @@ function togglePreviewPlayback() {
     }
 }
 
-// Download the final generated video file in MP4 format
+// Download the final generated video file matching the recorded audio/video codec format
 function downloadVideo() {
     if (!generatedVideoUrl) return;
     
     const a = document.createElement('a');
     a.href = generatedVideoUrl;
     
-    // Save file name with current timestamp in MP4 format
+    // Save file name with current timestamp matching recorded format (.mp4 or .webm)
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
-    a.download = `GBAN_Shortform_${dateStr}.mp4`;
+    let ext = 'mp4';
+    if (recordedMimeType && recordedMimeType.toLowerCase().includes('webm')) {
+        ext = 'webm';
+    }
+    a.download = `GBAN_Shortform_${dateStr}.${ext}`;
     
     document.body.appendChild(a);
     a.click();
