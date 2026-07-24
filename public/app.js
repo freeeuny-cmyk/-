@@ -159,6 +159,20 @@ function setupEventListeners() {
         }
     }
 
+    // Real-time API Key saving to localStorage
+    openaiKeyInput.addEventListener('input', () => {
+        if (saveKeyCheckbox.checked) {
+            localStorage.setItem('openai_api_key', openaiKeyInput.value.trim());
+        }
+    });
+    saveKeyCheckbox.addEventListener('change', () => {
+        if (saveKeyCheckbox.checked) {
+            localStorage.setItem('openai_api_key', openaiKeyInput.value.trim());
+        } else {
+            localStorage.removeItem('openai_api_key');
+        }
+    });
+
     voiceSpeed.addEventListener('input', () => {
         voiceSpeedVal.innerText = `${parseFloat(voiceSpeed.value).toFixed(1)}x`;
     });
@@ -648,7 +662,7 @@ async function generateShortsVideo() {
                 localStorage.setItem('openai_api_key', apiKey);
             }
 
-            // Call TTS backend with Robust Fallback (handles static hosting environments like Render)
+            // Call TTS backend or direct OpenAI API fallback (for static hosting environments like GitHub Pages)
             const speed = parseFloat(voiceSpeed.value);
             const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
             let arrayBuffer = null;
@@ -659,7 +673,33 @@ async function generateShortsVideo() {
                     arrayBuffer = await response.arrayBuffer();
                 }
             } catch (e) {
-                console.warn('/api/tts backend unavailable, attempting direct fallback...', e);
+                console.warn('/api/tts backend unavailable, attempting direct fallbacks...', e);
+            }
+
+            // Direct OpenAI API call from client browser for static sites (GitHub Pages) when API key is present
+            if (!arrayBuffer && voice !== 'google' && voice !== 'none' && apiKey) {
+                try {
+                    const openAiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: 'tts-1',
+                            input: slide.text,
+                            voice: voice
+                        })
+                    });
+                    if (openAiResponse.ok) {
+                        arrayBuffer = await openAiResponse.arrayBuffer();
+                    } else {
+                        const errText = await openAiResponse.text();
+                        console.warn('Direct OpenAI API response not ok:', errText);
+                    }
+                } catch (oaiErr) {
+                    console.warn('Direct OpenAI fetch from browser failed:', oaiErr);
+                }
             }
 
             // Fallback 1: Direct Google Translate TTS endpoint
