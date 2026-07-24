@@ -373,6 +373,23 @@ async function toggleVoicePreview() {
         return;
     }
 
+    let apiKey = openaiKeyInput.value.trim();
+
+    if (voice !== 'google' && voice !== 'none' && !apiKey) {
+        let backendAvailable = false;
+        try {
+            const checkResp = await fetch(`/api/tts?text=test&voice=${voice}`);
+            if (checkResp.ok) backendAvailable = true;
+        } catch(e) {}
+
+        if (!backendAvailable) {
+            openaiKeyContainer.style.display = 'flex';
+            openaiKeyInput.focus();
+            alert('모바일/웹 환경에서 선택하신 유료 AI 목소리를 사용하시려면 OpenAI API Key(sk-...)를 입력해 주세요.\n\n(Key가 없으신 경우 "기본 여성 목소리(무료)"를 선택해 주세요.)');
+            return;
+        }
+    }
+
     const sampleText = getScriptSentences()[0] || '안녕하세요! 경상북도농업기술원 숏폼 AI 목소리 샘플입니다.';
 
     isVoicePreviewPlaying = true;
@@ -994,6 +1011,25 @@ async function generateShortsVideo() {
     
     // Stop any active sound previews
     stopAllAudioPreviews();
+
+    // Check API Key requirement for paid OpenAI voices on mobile/web
+    const voice = voiceSelect.value;
+    let apiKey = openaiKeyInput.value.trim();
+
+    if (voice !== 'google' && voice !== 'none' && !apiKey) {
+        let backendAvailable = false;
+        try {
+            const checkResp = await fetch(`/api/tts?text=test&voice=${voice}`);
+            if (checkResp.ok) backendAvailable = true;
+        } catch(e) {}
+
+        if (!backendAvailable) {
+            openaiKeyContainer.style.display = 'flex';
+            openaiKeyInput.focus();
+            alert('모바일/웹 환경에서 선택하신 유료 AI 목소리를 사용하시려면 OpenAI API Key(sk-...)를 입력해 주세요.\n\n(API Key가 없으신 경우 "기본 여성 목소리(무료)"를 선택하시면 무제한 무료로 영상을 만드실 수 있습니다.)');
+            return;
+        }
+    }
 
     // Show Loading/Rendering screen overlay
     renderingOverlay.style.display = 'flex';
