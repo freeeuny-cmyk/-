@@ -9,6 +9,25 @@ import json
 PORT = 8000
 DIRECTORY = "public"
 
+def get_saved_api_key():
+    env_key = os.environ.get('OPENAI_API_KEY', '')
+    if env_key:
+        return env_key.strip()
+    possible_files = ['.env', 'key.txt', 'api_key.txt', 'secret.txt', 'openai_key.txt']
+    for fname in possible_files:
+        if os.path.exists(fname):
+            try:
+                with open(fname, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        s = line.strip()
+                        if s.startswith('OPENAI_API_KEY='):
+                            return s.split('=', 1)[1].strip('"\' ')
+                        elif s.startswith('sk-'):
+                            return s
+            except Exception:
+                pass
+    return ''
+
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # In Python 3.7+, SimpleHTTPRequestHandler accepts directory argument
@@ -34,7 +53,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             query = urllib.parse.parse_qs(parsed_url.query)
             text = query.get('text', [''])[0]
             voice = query.get('voice', ['alloy'])[0]
-            api_key = query.get('key', [''])[0] or os.environ.get('OPENAI_API_KEY', '')
+            api_key = query.get('key', [''])[0] or get_saved_api_key()
             
             if text:
                 try:
