@@ -630,7 +630,8 @@ select:focus {
     align-items: center;
 }
 
-.api-key-input-wrapper input[type="password"] {
+.api-key-input-wrapper input[type="password"],
+.api-key-input-wrapper input[type="text"] {
     flex: 1;
     padding: 10px 14px;
     background: var(--bg-input);
@@ -638,6 +639,27 @@ select:focus {
     border-radius: 12px;
     font-size: 13px;
     outline: none;
+}
+
+.btn-icon-key {
+    width: 36px;
+    height: 36px;
+    background: #ffffff;
+    border: 1px solid var(--border-main);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-icon-key:hover {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    background: var(--accent-soft-bg);
 }
 
 /* Action Buttons */

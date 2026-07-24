@@ -183,6 +183,40 @@ function setupEventListeners() {
         }
     });
 
+    const toggleKeyBtn = document.getElementById('toggle-key-visibility');
+    const copyKeyBtn = document.getElementById('copy-key-btn');
+
+    if (toggleKeyBtn) {
+        toggleKeyBtn.addEventListener('click', () => {
+            if (openaiKeyInput.type === 'password') {
+                openaiKeyInput.type = 'text';
+                toggleKeyBtn.querySelector('i').className = 'fa-solid fa-eye-slash';
+            } else {
+                openaiKeyInput.type = 'password';
+                toggleKeyBtn.querySelector('i').className = 'fa-solid fa-eye';
+            }
+        });
+    }
+
+    if (copyKeyBtn) {
+        copyKeyBtn.addEventListener('click', () => {
+            const val = openaiKeyInput.value.trim();
+            if (!val) {
+                alert('복사할 API Key가 비어있습니다.');
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(val).then(() => {
+                    alert('API Key가 클립보드에 복사되었습니다!');
+                }).catch(() => {
+                    prompt('아래 Key 번호를 복사하세요:', val);
+                });
+            } else {
+                prompt('아래 Key 번호를 복사하세요:', val);
+            }
+        });
+    }
+
     voiceSpeed.addEventListener('input', () => {
         voiceSpeedVal.innerText = `${parseFloat(voiceSpeed.value).toFixed(1)}x`;
     });

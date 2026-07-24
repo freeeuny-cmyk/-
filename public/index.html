@@ -230,11 +230,17 @@
                             <label for="openai-key-input">OpenAI API Key 입력 (모바일/웹 유료 목소리 사용 시 필수)</label>
                             <div class="api-key-input-wrapper">
                                 <input type="password" id="openai-key-input" placeholder="sk-proj-...">
+                                <button type="button" id="toggle-key-visibility" class="btn-icon-key" title="Key 번호 보기/숨기기">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button type="button" id="copy-key-btn" class="btn-icon-key" title="Key 복사하기">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
                                 <label class="checkbox-label">
                                     <input type="checkbox" id="save-key-checkbox" checked> 자동 저장
                                 </label>
                             </div>
-                            <span class="helper-text">* 모바일 및 라이브 웹사이트에서 유료 AI 목소리(시머, 노바, 오닉스 등)를 사용하려면 OpenAI API Key(sk-...)를 입력해 주세요.<br>* Key가 없는 경우 '기본 여성 목소리(무료)'를 선택하시면 모든 기기에서 무제한 무료로 사용 가능합니다.</span>
+                            <span class="helper-text">* 내 컴퓨터 브라우저에서 👁️(눈 모양) 버튼을 누르시면 저장된 Key 번호(`sk-proj-...`)를 확인하고 복사하실 수 있습니다.</span>
                         </div>
                     </div>
 
