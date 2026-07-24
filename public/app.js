@@ -316,8 +316,275 @@ function setupEventListeners() {
             if (slideDurationVal) slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
             updateLivePreview();
         });
+    }
+    // Sound Preview Buttons
+    if (btnPreviewBgm) btnPreviewBgm.addEventListener('click', toggleBgmPreview);
+    if (btnPreviewVoice) btnPreviewVoice.addEventListener('click', toggleVoicePreview);
+    if (btnPreviewAll) btnPreviewAll.addEventListener('click', toggleAllPreview);
+
+    if (bgmSelect) {
+        bgmSelect.addEventListener('change', () => {
+            stopAllAudioPreviews();
+        });
+    }
+    if (voiceSelect) {
+        voiceSelect.addEventListener('change', () => {
+            stopAllAudioPreviews();
+        });
+    }
 }
 
+// Standalone Audio Preview State
+let previewAudioElementBgm = null;
+let previewAudioElementVoice = null;
+let isBgmPreviewPlaying = false;
+let isVoicePreviewPlaying = false;
+
+// 1. Toggle BGM Preview safely
+function toggleBgmPreview() {
+    if (isBgmPreviewPlaying) {
+        stopBgmPreview();
+        updateAllPreviewButtonUI();
+        return;
+    }
+
+    if (!bgmSelect || bgmSelect.value === 'none') {
+        alert('선택된 배경음악이 없습니다.');
+        return;
+    }
+
+    if (bgmSelect.value === 'custom' && !bgmAudioBuffer) {
+        alert('내 컴퓨터에서 BGM 음악 파일을 선택한 후 미리듣기를 실행하세요.');
+        return;
+    }
+
+    try {
+        const previewAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (previewAudioCtx.state === 'suspended') {
+            previewAudioCtx.resume();
+        }
+
+        let bgmNode = null;
+        if (bgmSelect.value === 'custom' && bgmAudioBuffer) {
+            bgmNode = previewAudioCtx.createBufferSource();
+            bgmNode.buffer = bgmAudioBuffer;
+            bgmNode.loop = true;
+            const gain = previewAudioCtx.createGain();
+            gain.gain.value = parseFloat(bgmVolume ? bgmVolume.value : 0.35);
+            bgmNode.connect(gain);
+            gain.connect(previewAudioCtx.destination);
+            bgmNode.start(0);
+        } else {
+            bgmNode = createSynthBgmSource(previewAudioCtx, 0, 90);
+            bgmNode.connect(previewAudioCtx.destination);
+        }
+
+        previewAudioElementBgm = { ctx: previewAudioCtx, source: bgmNode };
+        isBgmPreviewPlaying = true;
+
+        if (btnPreviewBgm) {
+            btnPreviewBgm.classList.add('playing');
+            btnPreviewBgm.querySelector('span').innerText = '배경음악 정지';
+            btnPreviewBgm.querySelector('i').className = 'fa-solid fa-square';
+        }
+    } catch(e) {
+        console.warn('BGM preview error:', e);
+        stopBgmPreview();
+    }
+}
+
+function stopBgmPreview() {
+    if (previewAudioElementBgm && previewAudioElementBgm.ctx) {
+        try { previewAudioElementBgm.ctx.close(); } catch(e) {}
+    }
+    previewAudioElementBgm = null;
+    isBgmPreviewPlaying = false;
+    if (btnPreviewBgm) {
+        btnPreviewBgm.classList.remove('playing');
+        btnPreviewBgm.querySelector('span').innerText = '배경음악 미리듣기';
+        btnPreviewBgm.querySelector('i').className = 'fa-solid fa-music';
+    }
+}
+
+// 2. Toggle Voice Preview safely
+async function toggleVoicePreview() {
+    if (isVoicePreviewPlaying) {
+        stopVoicePreview();
+        updateAllPreviewButtonUI();
+        return;
+    }
+
+    const voice = voiceSelect ? voiceSelect.value : 'google';
+    if (voice === 'none') {
+        alert('선택된 AI 목소리가 없습니다.');
+        return;
+    }
+
+    let apiKey = openaiKeyInput ? openaiKeyInput.value.trim() : '';
+    if (voice !== 'google' && voice !== 'none' && !apiKey) {
+        let backendAvailable = false;
+        try {
+            const checkResp = await fetch(`/api/tts?text=test&voice=${voice}`);
+            if (checkResp.ok) backendAvailable = true;
+        } catch(e) {}
+
+        if (!backendAvailable) {
+            if (openaiKeyContainer) openaiKeyContainer.style.display = 'flex';
+            if (openaiKeyInput) openaiKeyInput.focus();
+            alert('유료 목소리 미리듣기를 사용하시려면 OpenAI API Key(sk-...)를 입력해 주세요.\n\n(Key 없이 사용하시려면 "기본 여성 목소리(무료)"를 선택해 주세요.)');
+            return;
+        }
+    }
+
+    const sampleText = getScriptSentences()[0] || '안녕하세요! 경상북도농업기술원 숏폼 AI 목소리 샘플입니다.';
+
+    isVoicePreviewPlaying = true;
+    if (btnPreviewVoice) {
+        btnPreviewVoice.classList.add('loading');
+        btnPreviewVoice.querySelector('span').innerText = '음성 생성 중...';
+        btnPreviewVoice.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
+    }
+
+    const speed = parseFloat(voiceSpeed ? voiceSpeed.value : 1.0);
+    const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
+    let arrayBuffer = null;
+
+    try {
+        const response = await fetch(`/api/tts?text=${encodeURIComponent(sampleText)}${keyParam}`);
+        if (response.ok) {
+            arrayBuffer = await response.arrayBuffer();
+        }
+    } catch (e) {}
+
+    if (!arrayBuffer && voice !== 'google' && voice !== 'none' && apiKey) {
+        try {
+            const openAiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'tts-1',
+                    input: sampleText,
+                    voice: voice
+                })
+            });
+            if (openAiResponse.ok) {
+                arrayBuffer = await openAiResponse.arrayBuffer();
+            }
+        } catch (oaiErr) {}
+    }
+
+    if (!arrayBuffer && voice !== 'none') {
+        try {
+            const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${encodeURIComponent(sampleText)}`;
+            const gResp = await fetch(googleUrl);
+            if (gResp.ok) {
+                arrayBuffer = await gResp.arrayBuffer();
+            }
+        } catch (ge) {}
+    }
+
+    if (btnPreviewVoice) {
+        btnPreviewVoice.classList.remove('loading');
+    }
+
+    if (!arrayBuffer || !isVoicePreviewPlaying) {
+        stopVoicePreview();
+        return;
+    }
+
+    try {
+        const voiceCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (voiceCtx.state === 'suspended') {
+            try { await voiceCtx.resume(); } catch(e) {}
+        }
+
+        const bufferCopy = arrayBuffer.slice(0);
+        const decodedBuffer = await new Promise((resolve) => {
+            voiceCtx.decodeAudioData(bufferCopy, resolve, () => resolve(null));
+        });
+
+        if (!decodedBuffer || !isVoicePreviewPlaying) {
+            stopVoicePreview();
+            return;
+        }
+
+        const vSource = voiceCtx.createBufferSource();
+        vSource.buffer = decodedBuffer;
+        if (!isNaN(speed) && speed > 0) {
+            vSource.playbackRate.value = speed;
+        }
+        vSource.connect(voiceCtx.destination);
+
+        previewAudioElementVoice = { ctx: voiceCtx, source: vSource };
+
+        if (btnPreviewVoice) {
+            btnPreviewVoice.classList.add('playing');
+            btnPreviewVoice.querySelector('span').innerText = '목소리 정지';
+            btnPreviewVoice.querySelector('i').className = 'fa-solid fa-square';
+        }
+
+        vSource.onended = () => {
+            stopVoicePreview();
+            updateAllPreviewButtonUI();
+        };
+
+        vSource.start(0);
+    } catch (err) {
+        console.error('Voice preview error:', err);
+        stopVoicePreview();
+    }
+}
+
+function stopVoicePreview() {
+    if (previewAudioElementVoice && previewAudioElementVoice.ctx) {
+        try { previewAudioElementVoice.ctx.close(); } catch(e) {}
+    }
+    previewAudioElementVoice = null;
+    isVoicePreviewPlaying = false;
+    if (btnPreviewVoice) {
+        btnPreviewVoice.classList.remove('playing', 'loading');
+        btnPreviewVoice.querySelector('span').innerText = '목소리 미리듣기';
+        btnPreviewVoice.querySelector('i').className = 'fa-solid fa-volume-high';
+    }
+}
+
+// 3. Combined All Preview
+function toggleAllPreview() {
+    if (isBgmPreviewPlaying || isVoicePreviewPlaying) {
+        stopAllAudioPreviews();
+        return;
+    }
+
+    toggleBgmPreview();
+    toggleVoicePreview();
+
+    if (btnPreviewAll) {
+        btnPreviewAll.classList.add('playing');
+        btnPreviewAll.querySelector('span').innerText = '전체 정지';
+        btnPreviewAll.querySelector('i').className = 'fa-solid fa-square';
+    }
+}
+
+function stopAllAudioPreviews() {
+    stopBgmPreview();
+    stopVoicePreview();
+    if (btnPreviewAll) {
+        btnPreviewAll.classList.remove('playing');
+        btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+        btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
+    }
+}
+
+function updateAllPreviewButtonUI() {
+    if (!isBgmPreviewPlaying && !isVoicePreviewPlaying && btnPreviewAll) {
+        btnPreviewAll.classList.remove('playing');
+        btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+        btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
+    }
+}
 // Handle Custom BGM file loading
 function handleCustomBgmUpload(e) {
     const file = e.target.files[0];
