@@ -138,7 +138,7 @@ function setupEventListeners() {
 
     // Range Sliders
     bgmVolume.addEventListener('input', () => {
-        bgmVolumeVal.innerText = `${Math.round(bgmVolume.value * 200)}%`;
+        bgmVolumeVal.innerText = `${Math.round(bgmVolume.value * 100)}%`;
     });
     
     // Voice Selection changes
@@ -620,13 +620,13 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
             oscGain.gain.setValueAtTime(0, startTime + time);
             
             if (isAmbient) {
-                // Slow attack and long release (pad sound)
-                oscGain.gain.linearRampToValueAtTime(0.04 / activeChord.length, startTime + time + 1.5);
-                oscGain.gain.setValueAtTime(0.04 / activeChord.length, startTime + time + synthInterval * 4 - 2.0);
+                // Rich attack and long release (pad sound)
+                oscGain.gain.linearRampToValueAtTime(0.18 / activeChord.length, startTime + time + 1.5);
+                oscGain.gain.setValueAtTime(0.18 / activeChord.length, startTime + time + synthInterval * 4 - 2.0);
                 oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + time + synthInterval * 4);
             } else {
                 // Pluck sound
-                oscGain.gain.linearRampToValueAtTime(0.06 / activeChord.length, startTime + time + 0.1);
+                oscGain.gain.linearRampToValueAtTime(0.22 / activeChord.length, startTime + time + 0.1);
                 oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + time + synthInterval * 2);
             }
             
@@ -650,7 +650,7 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
                     kickOsc.frequency.setValueAtTime(150, startTime + beatTime);
                     kickOsc.frequency.exponentialRampToValueAtTime(0.01, startTime + beatTime + 0.3);
                     
-                    kickGain.gain.setValueAtTime(0.15, startTime + beatTime);
+                    kickGain.gain.setValueAtTime(0.40, startTime + beatTime);
                     kickGain.gain.exponentialRampToValueAtTime(0.0001, startTime + beatTime + 0.3);
                     
                     kickOsc.connect(kickGain);
@@ -674,7 +674,7 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
                     noiseFilter.frequency.value = 1000;
                     
                     const noiseGain = audioCtx.createGain();
-                    noiseGain.gain.setValueAtTime(0.05, startTime + beatTime);
+                    noiseGain.gain.setValueAtTime(0.18, startTime + beatTime);
                     noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + beatTime + 0.15);
                     
                     noise.connect(noiseFilter);
@@ -747,6 +747,9 @@ async function generateShortsVideo() {
 
     // 3. Audio Context setup for Mixing
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioContext.state === 'suspended') {
+        try { await audioContext.resume(); } catch(e) {}
+    }
     
     // 4. Fetch TTS Audio for each slide
     updateProgress(15, '한국어 AI 음성(TTS) 합성 중...');
@@ -764,7 +767,6 @@ async function generateShortsVideo() {
             
             // Save or clear API key on generate
             let apiKey = openaiKeyInput.value.trim();
-            // If individual API key is empty, the backend server will automatically use the shared server API key if configured
             if (saveKeyCheckbox.checked && apiKey) {
                 localStorage.setItem('openai_api_key', apiKey);
             }
@@ -809,8 +811,8 @@ async function generateShortsVideo() {
                 }
             }
 
-            // Fallback 1: Direct Google Translate TTS endpoint
-            if (!arrayBuffer && voice === 'google') {
+            // Universal Fallback: If paid voice or API call fails or key is omitted, fallback to Google Translate TTS so voice NEVER fails
+            if (!arrayBuffer && voice !== 'none') {
                 try {
                     const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${encodeURIComponent(slide.text)}`;
                     const gResp = await fetch(googleUrl);
@@ -825,9 +827,17 @@ async function generateShortsVideo() {
             let originalBuffer = null;
             if (arrayBuffer) {
                 try {
-                    // Clone arrayBuffer because decodeAudioData detaches it
+                    if (audioContext.state === 'suspended') {
+                        try { await audioContext.resume(); } catch(resErr) {}
+                    }
                     const bufferCopy = arrayBuffer.slice(0);
-                    originalBuffer = await audioContext.decodeAudioData(bufferCopy);
+                    // Safe Promise + Callback compatibility for iOS Safari WebAudio
+                    originalBuffer = await new Promise((resolve, reject) => {
+                        const p = audioContext.decodeAudioData(bufferCopy, resolve, err => resolve(null));
+                        if (p && typeof p.then === 'function') {
+                            p.then(resolve).catch(err => resolve(null));
+                        }
+                    });
                 } catch(de) {
                     console.warn('Audio decode failed:', de);
                 }
@@ -873,6 +883,9 @@ async function generateShortsVideo() {
         totalVideoDuration = currentOffset; // In seconds
         
         // 5. Setup Web Audio MediaStreamDestination for Recording
+        if (audioContext.state === 'suspended') {
+            try { await audioContext.resume(); } catch(e) {}
+        }
         const recDest = audioContext.createMediaStreamDestination();
         
         // Lock start timestamp relative to AudioContext clock to prevent desync

@@ -38,27 +38,33 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             if text:
                 try:
+                    audio_data = None
                     if api_key:
-                        # OpenAI TTS API Call
-                        url = "https://api.openai.com/v1/audio/speech"
-                        data = json.dumps({
-                            "model": "tts-1",
-                            "input": text,
-                            "voice": voice
-                        }).encode('utf-8')
-                        
-                        req = urllib.request.Request(
-                            url,
-                            data=data,
-                            headers={
-                                'Authorization': f'Bearer {api_key}',
-                                'Content-Type': 'application/json'
-                            },
-                            method='POST'
-                        )
-                        with urllib.request.urlopen(req) as response:
-                            audio_data = response.read()
-                    else:
+                        try:
+                            # OpenAI TTS API Call
+                            url = "https://api.openai.com/v1/audio/speech"
+                            data = json.dumps({
+                                "model": "tts-1",
+                                "input": text,
+                                "voice": voice
+                            }).encode('utf-8')
+                            
+                            req = urllib.request.Request(
+                                url,
+                                data=data,
+                                headers={
+                                    'Authorization': f'Bearer {api_key}',
+                                    'Content-Type': 'application/json'
+                                },
+                                method='POST'
+                            )
+                            with urllib.request.urlopen(req) as response:
+                                audio_data = response.read()
+                        except Exception as oai_err:
+                            sys.stderr.write(f"OpenAI TTS error: {oai_err}, falling back to Google TTS\n")
+                            audio_data = None
+                    
+                    if not audio_data:
                         # Fallback: Google Translate TTS URL
                         url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q={urllib.parse.quote(text)}"
                         req = urllib.request.Request(
