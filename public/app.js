@@ -178,7 +178,14 @@ function setupEventListeners() {
     });
 
     // Upload drag and drop
-    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) {
+            fileInput.click();
+        }
+    });
+    fileInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
     fileInput.addEventListener('change', handleFileSelect);
 
     uploadZone.addEventListener('dragover', (e) => {
@@ -253,15 +260,17 @@ function handleCustomBgmUpload(e) {
 
 // File input selection
 function handleFileSelect(e) {
-    if (e.target.files.length > 0) {
+    if (e.target.files && e.target.files.length > 0) {
         processImageFiles(e.target.files);
     }
+    // Reset file input value to allow re-selecting same file
+    fileInput.value = '';
 }
 
 // Load and display selected images
 function processImageFiles(files) {
     let loadedCount = 0;
-    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const filesArray = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.includes('heic') || f.type.includes('heif'));
     
     if (filesArray.length === 0) return;
 
@@ -287,7 +296,7 @@ function processImageFiles(files) {
     });
 }
 
-// Render image preview thumbnails with drag and drop sorting
+// Render image preview thumbnails with drag & touch sorting & move arrow buttons
 function renderPreviews() {
     previewList.innerHTML = '';
     images.forEach((item, index) => {
@@ -296,17 +305,37 @@ function renderPreviews() {
         div.draggable = true;
         div.dataset.index = index;
 
+        const isFirst = index === 0;
+        const isLast = index === images.length - 1;
+
         div.innerHTML = `
             <img src="${item.img.src}" alt="${item.name}">
             <span class="preview-item-num">${index + 1}</span>
-            <button class="preview-item-delete" onclick="deleteImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+            <button class="preview-item-delete" onclick="deleteImage(event, ${index})" title="삭제">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="preview-item-reorder-btns">
+                <button class="reorder-btn move-left" onclick="moveImage(event, ${index}, -1)" ${isFirst ? 'disabled' : ''} title="왼쪽으로 이동">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button class="reorder-btn move-right" onclick="moveImage(event, ${index}, 1)" ${isLast ? 'disabled' : ''} title="오른쪽으로 이동">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
         `;
 
-        // Drag & Drop Sorting Events
+        // Desktop Drag & Drop Sorting Events
         div.addEventListener('dragstart', handleDragStart);
         div.addEventListener('dragover', handleDragOver);
+        div.addEventListener('dragleave', handleDragLeave);
         div.addEventListener('drop', handleDrop);
         div.addEventListener('dragend', handleDragEnd);
+
+        // Mobile Touch Sorting Events
+        div.addEventListener('touchstart', handleTouchStart, { passive: true });
+        div.addEventListener('touchmove', handleTouchMove, { passive: false });
+        div.addEventListener('touchend', handleTouchEnd);
+        div.addEventListener('touchcancel', handleTouchEnd);
 
         previewList.appendChild(div);
     });
@@ -350,16 +379,27 @@ function drawImageOnCanvas(img) {
 }
 
 // Delete image from preview list
-window.deleteImage = function(index) {
+window.deleteImage = function(e, index) {
+    if (e && e.stopPropagation) e.stopPropagation();
     images.splice(index, 1);
     renderPreviews();
 };
 
-// Drag and drop reordering state
+// Move image in preview list (Left/Right buttons)
+window.moveImage = function(e, index, delta) {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const newIndex = index + delta;
+    if (newIndex < 0 || newIndex >= images.length) return;
+    const movedItem = images.splice(index, 1)[0];
+    images.splice(newIndex, 0, movedItem);
+    renderPreviews();
+};
+
+// Drag and drop reordering state (Desktop)
 let dragSrcIndex = null;
 
 function handleDragStart(e) {
-    dragSrcIndex = this.dataset.index;
+    dragSrcIndex = parseInt(this.dataset.index, 10);
     this.style.opacity = '0.4';
     e.dataTransfer.effectAllowed = 'move';
 }
@@ -368,7 +408,6 @@ function handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     
-    // Add visual indicator
     const rect = this.getBoundingClientRect();
     const midX = rect.left + rect.width / 2;
     if (e.clientX < midX) {
@@ -388,9 +427,8 @@ function handleDrop(e) {
     e.preventDefault();
     this.classList.remove('drag-over-left', 'drag-over-right');
     
-    const targetIndex = this.dataset.index;
+    const targetIndex = parseInt(this.dataset.index, 10);
     if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) {
-        // Swap or move elements in array
         const draggedItem = images.splice(dragSrcIndex, 1)[0];
         images.splice(targetIndex, 0, draggedItem);
         renderPreviews();
@@ -403,6 +441,75 @@ function handleDragEnd() {
     items.forEach(item => {
         item.classList.remove('drag-over-left', 'drag-over-right');
     });
+}
+
+// Touch Drag and Drop Reordering state & handlers (Mobile)
+let touchDragSrcIndex = null;
+let touchDragElem = null;
+let touchCurrentTargetIndex = null;
+
+function handleTouchStart(e) {
+    if (e.target.closest('.preview-item-delete') || e.target.closest('.reorder-btn')) {
+        return;
+    }
+    const item = e.currentTarget;
+    touchDragSrcIndex = parseInt(item.dataset.index, 10);
+    touchDragElem = item;
+    touchCurrentTargetIndex = touchDragSrcIndex;
+    item.classList.add('is-touch-dragging');
+}
+
+function handleTouchMove(e) {
+    if (touchDragSrcIndex === null || !e.touches || e.touches.length === 0) return;
+
+    if (e.cancelable) {
+        e.preventDefault();
+    }
+
+    const touch = e.touches[0];
+    const elemUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!elemUnder) return;
+
+    const targetItem = elemUnder.closest('.preview-item');
+
+    document.querySelectorAll('.preview-item').forEach(el => {
+        el.classList.remove('drag-over-left', 'drag-over-right');
+    });
+
+    if (targetItem && previewList.contains(targetItem)) {
+        const targetIndex = parseInt(targetItem.dataset.index, 10);
+        touchCurrentTargetIndex = targetIndex;
+
+        const rect = targetItem.getBoundingClientRect();
+        const midX = rect.left + rect.width / 2;
+        if (touch.clientX < midX) {
+            targetItem.classList.add('drag-over-left');
+        } else {
+            targetItem.classList.add('drag-over-right');
+        }
+    }
+}
+
+function handleTouchEnd() {
+    if (touchDragSrcIndex === null) return;
+
+    if (touchDragElem) {
+        touchDragElem.classList.remove('is-touch-dragging');
+    }
+
+    document.querySelectorAll('.preview-item').forEach(el => {
+        el.classList.remove('drag-over-left', 'drag-over-right', 'is-touch-dragging');
+    });
+
+    if (touchCurrentTargetIndex !== null && touchCurrentTargetIndex !== touchDragSrcIndex) {
+        const movedItem = images.splice(touchDragSrcIndex, 1)[0];
+        images.splice(touchCurrentTargetIndex, 0, movedItem);
+        renderPreviews();
+    }
+
+    touchDragSrcIndex = null;
+    touchDragElem = null;
+    touchCurrentTargetIndex = null;
 }
 
 // Update live preview on canvas when controls or inputs change
