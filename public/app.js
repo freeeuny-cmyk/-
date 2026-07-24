@@ -221,7 +221,15 @@ function setupEventListeners() {
         voiceSpeedVal.innerText = `${parseFloat(voiceSpeed.value).toFixed(1)}x`;
     });
 
-    // Upload drag and drop
+    // Upload drag and drop & click
+    uploadZone.addEventListener('click', (e) => {
+        if (e.target !== fileInput) {
+            fileInput.click();
+        }
+    });
+    fileInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
     fileInput.addEventListener('change', handleFileSelect);
 
     uploadZone.addEventListener('dragover', (e) => {
@@ -492,13 +500,11 @@ async function toggleVoicePreview() {
             return;
         }
 
-        let finalBuffer = decodedBuffer;
-        if (Math.abs(speed - 1.0) > 0.05 && decodedBuffer.duration > 0.1) {
-            finalBuffer = adjustAudioBufferSpeed(voicePreviewAudioCtx, decodedBuffer, speed);
-        }
-
         voicePreviewSource = voicePreviewAudioCtx.createBufferSource();
-        voicePreviewSource.buffer = finalBuffer;
+        voicePreviewSource.buffer = decodedBuffer;
+        if (!isNaN(speed) && speed > 0) {
+            voicePreviewSource.playbackRate.value = speed;
+        }
         voicePreviewSource.connect(voicePreviewAudioCtx.destination);
 
         if (btnPreviewVoice) {
@@ -577,20 +583,7 @@ function handleFileSelect(e) {
 function processImageFiles(files) {
     if (!files || files.length === 0) return;
     let loadedCount = 0;
-    
-    // Resilient image filter for mobile camera photos & file managers with empty/generic MIME types
-    const filesArray = Array.from(files).filter(f => {
-        if (!f) return false;
-        if (f.type && f.type.startsWith('image/')) return true;
-        if (f.name && /\.(jpe?g|png|gif|webp|heic|heif|bmp|svg|tiff?)$/i.test(f.name)) return true;
-        // Accept unclassified or octet-stream files selected from camera roll
-        return !f.type || f.type === 'application/octet-stream' || f.type === '';
-    });
-    
-    if (filesArray.length === 0) {
-        alert('선택한 파일 중 이미지 파일(JPG, PNG 등)을 찾을 수 없습니다.');
-        return;
-    }
+    const filesArray = Array.from(files);
 
     filesArray.forEach(file => {
         const reader = new FileReader();
@@ -1240,10 +1233,15 @@ async function generateShortsVideo() {
         const audioStartTime = audioContext.currentTime + 0.1;
 
         // Play TTS voices at designated times
+        const speed = parseFloat(voiceSpeed.value);
         slidesData.forEach(slide => {
             if (slide.audioBuffer) {
                 const voiceSource = audioContext.createBufferSource();
                 voiceSource.buffer = slide.audioBuffer;
+                
+                if (!isNaN(speed) && speed > 0) {
+                    voiceSource.playbackRate.value = speed;
+                }
                 
                 // Route to recording destination
                 voiceSource.connect(recDest);
