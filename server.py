@@ -34,7 +34,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             query = urllib.parse.parse_qs(parsed_url.query)
             text = query.get('text', [''])[0]
             voice = query.get('voice', ['alloy'])[0]
-            api_key = query.get('key', [''])[0]
+            api_key = query.get('key', [''])[0] or os.environ.get('OPENAI_API_KEY', '')
             
             if text:
                 try:

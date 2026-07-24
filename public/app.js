@@ -642,13 +642,7 @@ async function generateShortsVideo() {
             
             // Save or clear API key on generate
             let apiKey = openaiKeyInput.value.trim();
-            let effectiveVoice = voice;
-            
-            if (voice !== 'google' && voice !== 'none' && !apiKey) {
-                console.warn('OpenAI key missing, soft falling back to free voice');
-                effectiveVoice = 'google';
-            }
-
+            // If individual API key is empty, the backend server will automatically use the shared server API key if configured
             if (saveKeyCheckbox.checked && apiKey) {
                 localStorage.setItem('openai_api_key', apiKey);
             }
