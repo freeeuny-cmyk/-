@@ -1215,10 +1215,10 @@ async function generateShortsVideo() {
         slidesData.forEach((slide, idx) => {
             const ttsResult = ttsResults.find(r => r.slideIndex === idx);
             
-            // Dynamic duration: Use user-specified duration as minimum, but expand if TTS is longer
+            // Dynamic duration: Use exact TTS audio buffer duration when voice is present so speed adjustments sync slide transitions perfectly
             let duration = userDuration;
-            if (ttsResult && voice !== 'none' && ttsResult.buffer) {
-                duration = Math.max(ttsResult.buffer.duration, userDuration);
+            if (ttsResult && voice !== 'none' && ttsResult.buffer && ttsResult.buffer.duration > 0.1) {
+                duration = ttsResult.buffer.duration;
             }
             
             slide.audioBuffer = (ttsResult && voice !== 'none') ? ttsResult.buffer : null;
@@ -1619,6 +1619,15 @@ function drawFixedWatermark(ctx) {
         const sloganY = 55;
 
         ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
+    } else {
+        // High quality text slogan fallback if image is loading or unavailable
+        ctx.save();
+        ctx.font = 'bold 22px "Noto Sans KR", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'top';
+        ctx.fillText('경북의 힘!으로 새로운 대한민국', canvas.width - 36, 55);
+        ctx.restore();
     }
 
     // 2. Bottom-Center Institution Watermark (Official Blue Wave Logo + "경상북도농업기술원")
@@ -1632,7 +1641,7 @@ function drawFixedWatermark(ctx) {
     const logoHeight = 28;
     const logoWidth = (gbLogoImg.complete && gbLogoImg.naturalWidth && gbLogoImg.naturalHeight)
         ? Math.round(logoHeight * (gbLogoImg.naturalWidth / gbLogoImg.naturalHeight))
-        : 44;
+        : 36;
 
     const spacing = 12;
     const totalWidth = logoWidth + spacing + textWidth;
@@ -1643,12 +1652,18 @@ function drawFixedWatermark(ctx) {
     if (gbLogoImg.complete && gbLogoImg.naturalWidth !== 0) {
         ctx.drawImage(gbLogoImg, startX, logoY, logoWidth, logoHeight);
     } else {
-        // Fallback icon if loading
+        // Crisp emblem fallback badge
+        ctx.save();
         ctx.fillStyle = '#0077b6';
-        ctx.font = '900 23px "Font Awesome 6 Free"';
-        ctx.textAlign = 'left';
+        ctx.beginPath();
+        ctx.arc(startX + 14, watermarkY, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px "Noto Sans KR", sans-serif';
+        ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('\uf06c', startX, watermarkY);
+        ctx.fillText('GB', startX + 14, watermarkY);
+        ctx.restore();
     }
 
     // Draw "경상북도농업기술원" Text

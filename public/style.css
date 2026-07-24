@@ -261,6 +261,12 @@ body {
 
 /* Upload Zone */
 .upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
     background: var(--bg-input);
     border: 1.5px dashed var(--border-sub);
     border-radius: 18px;
@@ -268,6 +274,7 @@ body {
     text-align: center;
     cursor: pointer;
     transition: all 0.25s ease;
+    user-select: none;
 }
 
 .upload-zone:hover, .upload-zone.drag-over {
