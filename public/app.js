@@ -3,6 +3,7 @@
 // State Variables
 let images = []; // Array of Image objects and their metadata
 let bgmAudioBuffer = null; // Decoded custom BGM audio buffer
+let activeBgmGainNode = null; // Currently playing BGM gain node for real-time volume control
 let activeSlideIndex = 0;
 let isPlaying = false;
 let canvas, ctx;
@@ -138,7 +139,11 @@ function setupEventListeners() {
 
     // Range Sliders
     bgmVolume.addEventListener('input', () => {
-        bgmVolumeVal.innerText = `${Math.round(bgmVolume.value * 100)}%`;
+        const val = parseFloat(bgmVolume.value);
+        bgmVolumeVal.innerText = `${Math.round(val * 100)}%`;
+        if (activeBgmGainNode && activeBgmGainNode.gain) {
+            activeBgmGainNode.gain.value = val;
+        }
     });
     
     // Voice Selection changes
@@ -563,6 +568,7 @@ function getScriptSentences() {
 function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
     const outputNode = audioCtx.createGain();
     outputNode.gain.value = parseFloat(bgmVolume.value);
+    activeBgmGainNode = outputNode;
 
     const isAmbient = bgmSelect.value === 'ambient';
     const isUpbeat = bgmSelect.value === 'upbeat';
@@ -613,7 +619,7 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
             // Lowpass filter for warm tone
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'lowpass';
-            filter.frequency.value = isAmbient ? 600 : 1200;
+            filter.frequency.value = isAmbient ? 700 : 1400;
             
             // Volume Envelope
             const oscGain = audioCtx.createGain();
@@ -621,12 +627,12 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
             
             if (isAmbient) {
                 // Rich attack and long release (pad sound)
-                oscGain.gain.linearRampToValueAtTime(0.18 / activeChord.length, startTime + time + 1.5);
-                oscGain.gain.setValueAtTime(0.18 / activeChord.length, startTime + time + synthInterval * 4 - 2.0);
+                oscGain.gain.linearRampToValueAtTime(0.80 / activeChord.length, startTime + time + 1.5);
+                oscGain.gain.setValueAtTime(0.80 / activeChord.length, startTime + time + synthInterval * 4 - 2.0);
                 oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + time + synthInterval * 4);
             } else {
                 // Pluck sound
-                oscGain.gain.linearRampToValueAtTime(0.22 / activeChord.length, startTime + time + 0.1);
+                oscGain.gain.linearRampToValueAtTime(0.90 / activeChord.length, startTime + time + 0.1);
                 oscGain.gain.exponentialRampToValueAtTime(0.0001, startTime + time + synthInterval * 2);
             }
             
@@ -650,7 +656,7 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
                     kickOsc.frequency.setValueAtTime(150, startTime + beatTime);
                     kickOsc.frequency.exponentialRampToValueAtTime(0.01, startTime + beatTime + 0.3);
                     
-                    kickGain.gain.setValueAtTime(0.40, startTime + beatTime);
+                    kickGain.gain.setValueAtTime(0.85, startTime + beatTime);
                     kickGain.gain.exponentialRampToValueAtTime(0.0001, startTime + beatTime + 0.3);
                     
                     kickOsc.connect(kickGain);
@@ -674,7 +680,7 @@ function createSynthBgmSource(audioCtx, startTime = 0, tempo = 90) {
                     noiseFilter.frequency.value = 1000;
                     
                     const noiseGain = audioCtx.createGain();
-                    noiseGain.gain.setValueAtTime(0.18, startTime + beatTime);
+                    noiseGain.gain.setValueAtTime(0.50, startTime + beatTime);
                     noiseGain.gain.exponentialRampToValueAtTime(0.0001, startTime + beatTime + 0.15);
                     
                     noise.connect(noiseFilter);
@@ -918,6 +924,7 @@ async function generateShortsVideo() {
             
             const bgmGain = audioContext.createGain();
             bgmGain.gain.value = parseFloat(bgmVolume.value);
+            activeBgmGainNode = bgmGain;
             
             bgmSource.connect(bgmGain);
             bgmGain.connect(recDest);
