@@ -9,48 +9,15 @@ let isPlaying = false;
 let canvas, ctx;
 let animationFrameId = null;
 
-// DOM Elements
-const uploadZone = document.getElementById('upload-zone');
-const fileInput = document.getElementById('file-input');
-const previewList = document.getElementById('preview-list');
-const scriptInput = document.getElementById('script-input');
-const charCount = document.getElementById('char-count');
-const bgmSelect = document.getElementById('bgm-select');
-const customBgmContainer = document.getElementById('custom-bgm-container');
-const customBgmInput = document.getElementById('custom-bgm-input');
-const bgmVolume = document.getElementById('bgm-volume');
-const bgmVolumeVal = bgmVolume.nextElementSibling;
-const voiceSpeed = document.getElementById('voice-speed');
-const voiceSpeedVal = voiceSpeed.nextElementSibling;
-const voiceSelect = document.getElementById('voice-select');
-const openaiKeyContainer = document.getElementById('openai-key-container');
-const openaiKeyInput = document.getElementById('openai-key-input');
-const saveKeyCheckbox = document.getElementById('save-key-checkbox');
-const btnGenerate = document.getElementById('btn-generate');
-const btnPreviewPlay = document.getElementById('btn-preview-play');
-const btnDownload = document.getElementById('btn-download');
-const renderingOverlay = document.getElementById('rendering-overlay');
-const loadingStatus = document.getElementById('loading-status');
-const progressBarFill = document.getElementById('progress-bar-fill');
-const progressPercentage = document.getElementById('progress-percentage');
-const infoDescription = document.getElementById('info-description');
-const playOverlayBtn = document.getElementById('play-overlay-btn');
-
-// Audio Preview DOM Elements
-const btnPreviewBgm = document.getElementById('btn-preview-bgm');
-const btnPreviewVoice = document.getElementById('btn-preview-voice');
-const btnPreviewAll = document.getElementById('btn-preview-all');
-
-// New Subtitle & Duration Settings DOM Elements
-const subtitlePosition = document.getElementById('subtitle-position');
-const subtitleColorPreset = document.getElementById('subtitle-color-preset');
-const customColorContainer = document.getElementById('custom-color-container');
-const subtitleColor = document.getElementById('subtitle-color');
-const subtitleColorVal = document.getElementById('subtitle-color-val');
-const subtitleSize = document.getElementById('subtitle-size');
-const subtitleSizeVal = subtitleSize.nextElementSibling;
-const slideDuration = document.getElementById('slide-duration');
-const slideDurationVal = slideDuration.nextElementSibling;
+// DOM Element Variables
+let uploadZone, fileInput, previewList, scriptInput, charCount;
+let bgmSelect, customBgmContainer, customBgmInput, bgmVolume, bgmVolumeVal;
+let voiceSpeed, voiceSpeedVal, voiceSelect, openaiKeyContainer, openaiKeyInput, saveKeyCheckbox;
+let btnGenerate, btnPreviewPlay, btnDownload, renderingOverlay, loadingStatus;
+let progressBarFill, progressPercentage, infoDescription, playOverlayBtn;
+let btnPreviewBgm, btnPreviewVoice, btnPreviewAll;
+let subtitlePosition, subtitleColorPreset, customColorContainer, subtitleColor, subtitleColorVal;
+let subtitleSize, subtitleSizeVal, slideDuration, slideDurationVal;
 
 // Video Generation Variables
 let generatedVideoBlob = null;
@@ -58,6 +25,48 @@ let generatedVideoUrl = null;
 let recordedMimeType = '';
 let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
+
+function initDomElements() {
+    uploadZone = document.getElementById('upload-zone');
+    fileInput = document.getElementById('file-input');
+    previewList = document.getElementById('preview-list');
+    scriptInput = document.getElementById('script-input');
+    charCount = document.getElementById('char-count');
+    bgmSelect = document.getElementById('bgm-select');
+    customBgmContainer = document.getElementById('custom-bgm-container');
+    customBgmInput = document.getElementById('custom-bgm-input');
+    bgmVolume = document.getElementById('bgm-volume');
+    bgmVolumeVal = bgmVolume ? bgmVolume.nextElementSibling : null;
+    voiceSpeed = document.getElementById('voice-speed');
+    voiceSpeedVal = voiceSpeed ? voiceSpeed.nextElementSibling : null;
+    voiceSelect = document.getElementById('voice-select');
+    openaiKeyContainer = document.getElementById('openai-key-container');
+    openaiKeyInput = document.getElementById('openai-key-input');
+    saveKeyCheckbox = document.getElementById('save-key-checkbox');
+    btnGenerate = document.getElementById('btn-generate');
+    btnPreviewPlay = document.getElementById('btn-preview-play');
+    btnDownload = document.getElementById('btn-download');
+    renderingOverlay = document.getElementById('rendering-overlay');
+    loadingStatus = document.getElementById('loading-status');
+    progressBarFill = document.getElementById('progress-bar-fill');
+    progressPercentage = document.getElementById('progress-percentage');
+    infoDescription = document.getElementById('info-description');
+    playOverlayBtn = document.getElementById('play-overlay-btn');
+
+    btnPreviewBgm = document.getElementById('btn-preview-bgm');
+    btnPreviewVoice = document.getElementById('btn-preview-voice');
+    btnPreviewAll = document.getElementById('btn-preview-all');
+
+    subtitlePosition = document.getElementById('subtitle-position');
+    subtitleColorPreset = document.getElementById('subtitle-color-preset');
+    customColorContainer = document.getElementById('custom-color-container');
+    subtitleColor = document.getElementById('subtitle-color');
+    subtitleColorVal = document.getElementById('subtitle-color-val');
+    subtitleSize = document.getElementById('subtitle-size');
+    subtitleSizeVal = subtitleSize ? subtitleSize.nextElementSibling : null;
+    slideDuration = document.getElementById('slide-duration');
+    slideDurationVal = slideDuration ? slideDuration.nextElementSibling : null;
+}
 
 // Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
 const gbLogoImg = new Image();
@@ -74,13 +83,22 @@ gbSloganImg.onload = () => {
     if (ctx && typeof drawPlaceholder === 'function') drawPlaceholder();
 };
 
-// Initialize Canvas
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize Application
+function initApp() {
+    initDomElements();
     canvas = document.getElementById('shorts-canvas');
-    ctx = canvas.getContext('2d');
-    drawPlaceholder();
+    if (canvas) {
+        ctx = canvas.getContext('2d');
+        drawPlaceholder();
+    }
     setupEventListeners();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
 
 // Draw a beautiful default placeholder on the simulator canvas
 function drawPlaceholder() {
@@ -125,73 +143,83 @@ function drawPlaceholder() {
 // Set up all UI event listeners
 function setupEventListeners() {
     // Character Counter & Live Preview
-    scriptInput.addEventListener('input', () => {
-        charCount.innerText = `${scriptInput.value.length}자`;
-        updateLivePreview();
-    });
+    if (scriptInput) {
+        scriptInput.addEventListener('input', () => {
+            if (charCount) charCount.innerText = `${scriptInput.value.length}자`;
+            updateLivePreview();
+        });
+    }
 
     // BGM Selection changes
-    bgmSelect.addEventListener('change', () => {
-        if (bgmSelect.value === 'custom') {
-            customBgmContainer.style.display = 'flex';
-        } else {
-            customBgmContainer.style.display = 'none';
-        }
-    });
+    if (bgmSelect) {
+        bgmSelect.addEventListener('change', () => {
+            if (customBgmContainer) {
+                customBgmContainer.style.display = (bgmSelect.value === 'custom') ? 'flex' : 'none';
+            }
+            stopAllAudioPreviews();
+        });
+    }
 
     // Custom BGM upload loading
-    customBgmInput.addEventListener('change', handleCustomBgmUpload);
+    if (customBgmInput) customBgmInput.addEventListener('change', handleCustomBgmUpload);
 
     // Range Sliders
-    bgmVolume.addEventListener('input', () => {
-        const val = parseFloat(bgmVolume.value);
-        bgmVolumeVal.innerText = `${Math.round(val * 100)}%`;
-        if (activeBgmGainNode && activeBgmGainNode.gain) {
-            activeBgmGainNode.gain.value = val;
-        }
-    });
+    if (bgmVolume) {
+        bgmVolume.addEventListener('input', () => {
+            const val = parseFloat(bgmVolume.value);
+            if (bgmVolumeVal) bgmVolumeVal.innerText = `${Math.round(val * 100)}%`;
+            if (activeBgmGainNode && activeBgmGainNode.gain) {
+                activeBgmGainNode.gain.value = val;
+            }
+        });
+    }
     
     // Voice Selection changes
-    voiceSelect.addEventListener('change', () => {
-        if (voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
-            openaiKeyContainer.style.display = 'flex';
-        } else {
-            openaiKeyContainer.style.display = 'none';
-        }
-    });
+    if (voiceSelect) {
+        voiceSelect.addEventListener('change', () => {
+            if (openaiKeyContainer) {
+                openaiKeyContainer.style.display = (voiceSelect.value !== 'google' && voiceSelect.value !== 'none') ? 'flex' : 'none';
+            }
+            stopAllAudioPreviews();
+        });
+    }
 
     // Load saved API key on startup
     const savedKey = localStorage.getItem('openai_api_key');
-    if (savedKey) {
+    if (savedKey && openaiKeyInput) {
         openaiKeyInput.value = savedKey;
-        if (voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
+        if (openaiKeyContainer && voiceSelect && voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
             openaiKeyContainer.style.display = 'flex';
         }
     }
 
     // Real-time API Key saving to localStorage
-    openaiKeyInput.addEventListener('input', () => {
-        if (saveKeyCheckbox.checked) {
-            localStorage.setItem('openai_api_key', openaiKeyInput.value.trim());
-        }
-    });
-    saveKeyCheckbox.addEventListener('change', () => {
-        if (saveKeyCheckbox.checked) {
-            localStorage.setItem('openai_api_key', openaiKeyInput.value.trim());
-        } else {
-            localStorage.removeItem('openai_api_key');
-        }
-    });
+    if (openaiKeyInput) {
+        openaiKeyInput.addEventListener('input', () => {
+            if (saveKeyCheckbox && saveKeyCheckbox.checked) {
+                localStorage.setItem('openai_api_key', openaiKeyInput.value.trim());
+            }
+        });
+    }
+    if (saveKeyCheckbox) {
+        saveKeyCheckbox.addEventListener('change', () => {
+            if (saveKeyCheckbox.checked && openaiKeyInput) {
+                localStorage.setItem('openai_api_key', openaiKeyInput.value.trim());
+            } else {
+                localStorage.removeItem('openai_api_key');
+            }
+        });
+    }
 
     const toggleKeyBtn = document.getElementById('toggle-key-visibility');
     const copyKeyBtn = document.getElementById('copy-key-btn');
 
     if (toggleKeyBtn) {
         toggleKeyBtn.addEventListener('click', () => {
-            if (openaiKeyInput.type === 'password') {
+            if (openaiKeyInput && openaiKeyInput.type === 'password') {
                 openaiKeyInput.type = 'text';
                 toggleKeyBtn.querySelector('i').className = 'fa-solid fa-eye-slash';
-            } else {
+            } else if (openaiKeyInput) {
                 openaiKeyInput.type = 'password';
                 toggleKeyBtn.querySelector('i').className = 'fa-solid fa-eye';
             }
@@ -200,7 +228,7 @@ function setupEventListeners() {
 
     if (copyKeyBtn) {
         copyKeyBtn.addEventListener('click', () => {
-            const val = openaiKeyInput.value.trim();
+            const val = openaiKeyInput ? openaiKeyInput.value.trim() : '';
             if (!val) {
                 alert('복사할 API Key가 비어있습니다.');
                 return;
@@ -217,68 +245,78 @@ function setupEventListeners() {
         });
     }
 
-    voiceSpeed.addEventListener('input', () => {
-        voiceSpeedVal.innerText = `${parseFloat(voiceSpeed.value).toFixed(1)}x`;
-    });
+    if (voiceSpeed) {
+        voiceSpeed.addEventListener('input', () => {
+            if (voiceSpeedVal) voiceSpeedVal.innerText = `${parseFloat(voiceSpeed.value).toFixed(1)}x`;
+        });
+    }
 
     // Upload drag and drop & click
-    uploadZone.addEventListener('click', (e) => {
-        if (e.target !== fileInput) {
-            fileInput.click();
-        }
-    });
-    fileInput.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-    fileInput.addEventListener('change', handleFileSelect);
+    if (uploadZone) {
+        uploadZone.addEventListener('click', (e) => {
+            if (fileInput && e.target !== fileInput) {
+                fileInput.click();
+            }
+        });
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                processImageFiles(e.dataTransfer.files);
+            }
+        });
+    }
 
-    uploadZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadZone.classList.add('dragover');
-    });
-
-    uploadZone.addEventListener('dragleave', () => {
-        uploadZone.classList.remove('dragover');
-    });
-
-    uploadZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadZone.classList.remove('dragover');
-        if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-            processImageFiles(e.dataTransfer.files);
-        }
-    });
+    if (fileInput) {
+        fileInput.addEventListener('click', (e) => e.stopPropagation());
+        fileInput.addEventListener('change', handleFileSelect);
+    }
 
     // Action Buttons
-    btnGenerate.addEventListener('click', generateShortsVideo);
-    btnPreviewPlay.addEventListener('click', togglePreviewPlayback);
-    playOverlayBtn.addEventListener('click', togglePreviewPlayback);
-    btnDownload.addEventListener('click', downloadVideo);
+    if (btnGenerate) btnGenerate.addEventListener('click', generateShortsVideo);
+    if (btnPreviewPlay) btnPreviewPlay.addEventListener('click', togglePreviewPlayback);
+    if (playOverlayBtn) playOverlayBtn.addEventListener('click', togglePreviewPlayback);
+    if (btnDownload) btnDownload.addEventListener('click', downloadVideo);
 
     // New Subtitle & Duration Sliders Listeners
-    subtitlePosition.addEventListener('change', () => {
-        updateLivePreview();
-    });
-    subtitleColorPreset.addEventListener('change', () => {
-        if (subtitleColorPreset.value === 'custom') {
-            customColorContainer.style.display = 'flex';
-        } else {
-            customColorContainer.style.display = 'none';
-        }
-        updateLivePreview();
-    });
-    subtitleColor.addEventListener('input', () => {
-        subtitleColorVal.innerText = subtitleColor.value.toUpperCase();
-        updateLivePreview();
-    });
-    subtitleSize.addEventListener('input', () => {
-        subtitleSizeVal.innerText = `${subtitleSize.value}px`;
-        updateLivePreview();
-    });
-    slideDuration.addEventListener('input', () => {
-        slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
-        updateLivePreview();
-    });
+    if (subtitlePosition) {
+        subtitlePosition.addEventListener('change', () => {
+            updateLivePreview();
+        });
+    }
+    if (subtitleColorPreset) {
+        subtitleColorPreset.addEventListener('change', () => {
+            if (customColorContainer) {
+                customColorContainer.style.display = (subtitleColorPreset.value === 'custom') ? 'flex' : 'none';
+            }
+            updateLivePreview();
+        });
+    }
+    if (subtitleColor) {
+        subtitleColor.addEventListener('input', () => {
+            if (subtitleColorVal) subtitleColorVal.innerText = subtitleColor.value.toUpperCase();
+            updateLivePreview();
+        });
+    }
+    if (subtitleSize) {
+        subtitleSize.addEventListener('input', () => {
+            if (subtitleSizeVal) subtitleSizeVal.innerText = `${subtitleSize.value}px`;
+            updateLivePreview();
+        });
+    }
+    if (slideDuration) {
+        slideDuration.addEventListener('input', () => {
+            if (slideDurationVal) slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
+            updateLivePreview();
+        });
+    }
 
     // Sound Preview Buttons
     if (btnPreviewBgm) btnPreviewBgm.addEventListener('click', toggleBgmPreview);
