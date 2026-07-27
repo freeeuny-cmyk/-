@@ -146,10 +146,20 @@ if __name__ == "__main__":
     handler = CustomHTTPRequestHandler
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("", PORT), handler) as httpd:
+        import socket
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            local_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            local_ip = "127.0.0.1"
+
         print(f"==================================================")
         print(f"  GBAN Shorts Creator Server is running!")
-        print(f"  Open your browser: http://localhost:{PORT}")
-        print(f"  Press Ctrl+C to stop the server.")
+        print(f"  내 컴퓨터 접속 URL:   http://localhost:{PORT}")
+        print(f"  다른 사람 접속 URL: http://{local_ip}:{PORT}")
+        print(f"  Ctrl+C를 누르면 서버가 종료됩니다.")
         print(f"==================================================")
         try:
             httpd.serve_forever()
