@@ -1522,6 +1522,40 @@ function adjustAudioBufferSpeed(audioContext, buffer, speed) {
     return newBuffer;
 }
 
+// Calculate image position and motion based on aspect ratio:
+// - Landscape (Horizontal) photos: Smooth left-to-right pan over duration
+// - Portrait (Vertical) photos: Fit to 9:16 frame container centered without left-right movement
+function getSlideDrawCoords(img, progress, canvasWidth, canvasHeight) {
+    const canvasRatio = canvasWidth / canvasHeight;
+    const imgRatio = img.width / img.height;
+    
+    let drawWidth, drawHeight, drawX, drawY;
+    
+    if (imgRatio > canvasRatio * 1.15) {
+        // Landscape (Horizontal) image: fill height and pan width smoothly from Left to Right
+        drawHeight = canvasHeight;
+        drawWidth = canvasHeight * imgRatio;
+        drawX = -progress * (drawWidth - canvasWidth);
+        drawY = 0;
+    } else {
+        // Portrait (Vertical) image: Cover/Fit 9:16 frame container centered perfectly!
+        drawWidth = canvasWidth;
+        drawHeight = canvasWidth / imgRatio;
+        
+        if (drawHeight >= canvasHeight) {
+            drawX = 0;
+            drawY = (canvasHeight - drawHeight) / 2;
+        } else {
+            drawWidth = canvasHeight * imgRatio;
+            drawHeight = canvasHeight;
+            drawX = (canvasWidth - drawWidth) / 2;
+            drawY = 0;
+        }
+    }
+    
+    return { drawX, drawY, drawWidth, drawHeight };
+}
+
 // Render a single Canvas frame based on current video timestamp
 function renderFrameAtTime(time) {
     // Find current active slide
@@ -1542,39 +1576,22 @@ function renderFrameAtTime(time) {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Dynamic Pan & Scan Calculation (shows full image over time)
-    // Slide elapsed percentage
+    // Dynamic Fit & Motion Calculation:
+    // 1. Horizontal (Landscape) photos: Smooth left-to-right pan
+    // 2. Vertical (Portrait) photos: Fit to 9:16 frame container centered (no left-right panning)
     const slideDuration = activeSlide.endTime - activeSlide.startTime;
     const slideElapsed = time - activeSlide.startTime;
-    const progress = slideElapsed / slideDuration;
+    const progress = Math.min(1.0, Math.max(0, slideElapsed / slideDuration));
     
-    // Draw Current Slide Image with pan
-    const canvasRatio = canvas.width / canvas.height;
-    const imgRatio = activeSlide.img.width / activeSlide.img.height;
-    
-    let drawWidth, drawHeight, drawX, drawY;
-    if (imgRatio > canvasRatio) {
-        // Landscape image: fill height, pan width from left to right (0 to negative offset)
-        drawHeight = canvas.height;
-        drawWidth = canvas.height * imgRatio;
-        drawX = -progress * (drawWidth - canvas.width);
-        drawY = 0;
-    } else {
-        // Portrait image: fill width, pan height from top to bottom (0 to negative offset)
-        drawWidth = canvas.width;
-        drawHeight = canvas.width / imgRatio;
-        drawX = 0;
-        drawY = -progress * (drawHeight - canvas.height);
-    }
+    const activeCoords = getSlideDrawCoords(activeSlide.img, progress, canvas.width, canvas.height);
     
     ctx.save();
-    ctx.drawImage(activeSlide.img, drawX, drawY, drawWidth, drawHeight);
+    ctx.drawImage(activeSlide.img, activeCoords.drawX, activeCoords.drawY, activeCoords.drawWidth, activeCoords.drawHeight);
     ctx.restore();
 
     // Cross-fade transition with next/previous slide
     const fadeDuration = 0.5; // 0.5 seconds transition
     if (slideElapsed < fadeDuration && slideIndex > 0) {
-        // Fade in from previous slide (remains static at its final panned state)
         const prevSlide = slidesData[slideIndex - 1];
         const alpha = 1.0 - (slideElapsed / fadeDuration);
         
@@ -1582,20 +1599,8 @@ function renderFrameAtTime(time) {
         ctx.globalAlpha = alpha;
         
         // Draw previous image in its final state (progress = 1.0)
-        const prevImgRatio = prevSlide.img.width / prevSlide.img.height;
-        let prevW, prevH, prevX, prevY;
-        if (prevImgRatio > canvasRatio) {
-            prevH = canvas.height;
-            prevW = canvas.height * prevImgRatio;
-            prevX = -(prevW - canvas.width); // Final state panned to the far right
-            prevY = 0;
-        } else {
-            prevW = canvas.width;
-            prevH = canvas.width / prevImgRatio;
-            prevX = 0;
-            prevY = -(prevH - canvas.height); // Final state panned to the far bottom
-        }
-        ctx.drawImage(prevSlide.img, prevX, prevY, prevW, prevH);
+        const prevCoords = getSlideDrawCoords(prevSlide.img, 1.0, canvas.width, canvas.height);
+        ctx.drawImage(prevSlide.img, prevCoords.drawX, prevCoords.drawY, prevCoords.drawWidth, prevCoords.drawHeight);
         ctx.restore();
     }
 
