@@ -694,39 +694,55 @@ function handleFileSelect(e) {
     fileInput.value = '';
 }
 
-// Load and display selected images
-function processImageFiles(files) {
+// Load and display selected images while preserving exact user selection order
+async function processImageFiles(files) {
     if (!files || files.length === 0) return;
-    let loadedCount = 0;
+    
     const filesArray = Array.from(files);
-
-    filesArray.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = function() {
-                images.push({
-                    img: img,
-                    name: file.name || '사진',
-                    id: Date.now() + Math.random().toString(36).substr(2, 5)
-                });
-                loadedCount++;
-                if (loadedCount === filesArray.length) {
-                    renderPreviews();
-                }
+    
+    // Use Promise.all to load images concurrently while strictly keeping original selection order
+    const loadPromises = filesArray.map((file, index) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = function() {
+                    resolve({
+                        index: index,
+                        img: img,
+                        name: file.name || '사진',
+                        id: Date.now() + Math.random().toString(36).substr(2, 5)
+                    });
+                };
+                img.onerror = function() {
+                    console.warn('Failed to load image file:', file.name);
+                    resolve(null);
+                };
+                img.src = e.target.result;
             };
-            img.onerror = function() {
-                console.warn('Failed to load image file:', file.name);
-                loadedCount++;
-                if (loadedCount === filesArray.length) {
-                    renderPreviews();
-                }
+            reader.onerror = function() {
+                resolve(null);
             };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
+        });
     });
+
+    const loadedResults = await Promise.all(loadPromises);
+    
+    // Sort by original selected index so file sequence is 100% preserved regardless of image file sizes
+    const validResults = loadedResults.filter(item => item !== null);
+    validResults.sort((a, b) => a.index - b.index);
+    
+    validResults.forEach(item => {
+        images.push({
+            img: item.img,
+            name: item.name,
+            id: item.id
+        });
+    });
+
+    renderPreviews();
 }
 
 // Render image preview thumbnails with drag & touch sorting & move arrow buttons
