@@ -1539,22 +1539,24 @@ function adjustAudioBufferSpeed(audioContext, buffer, speed) {
 }
 
 // Calculate image position and motion based on aspect ratio:
-// - Landscape (Horizontal) photos: Smooth left-to-right pan over duration
-// - Portrait (Vertical) photos: Fit to 9:16 frame container centered without left-right movement
+// - Landscape (Horizontal) photos (width > height): Smooth left-to-right pan over duration
+// - Portrait (Vertical & 3:4 / 4:5) photos (height >= width): Fit & center in 9:16 frame container without left-right movement
 function getSlideDrawCoords(img, progress, canvasWidth, canvasHeight) {
-    const canvasRatio = canvasWidth / canvasHeight;
+    const canvasRatio = canvasWidth / canvasHeight; // 720 / 1280 = 0.5625
     const imgRatio = img.width / img.height;
     
     let drawWidth, drawHeight, drawX, drawY;
     
-    if (imgRatio > canvasRatio * 1.15) {
+    // Only treat wide horizontal photos (width > height * 1.08) as landscape for left-to-right panning.
+    // Portrait (9:16, 3:4, 4:5) and square photos are centered to fit the 9:16 frame cleanly!
+    if (imgRatio > 1.08) {
         // Landscape (Horizontal) image: fill height and pan width smoothly from Left to Right
         drawHeight = canvasHeight;
         drawWidth = canvasHeight * imgRatio;
         drawX = -progress * (drawWidth - canvasWidth);
         drawY = 0;
     } else {
-        // Portrait (Vertical) image: Cover/Fit 9:16 frame container centered perfectly!
+        // Portrait / Vertical / Square image: Cover & center in 9:16 frame container without left-right movement!
         drawWidth = canvasWidth;
         drawHeight = canvasWidth / imgRatio;
         
