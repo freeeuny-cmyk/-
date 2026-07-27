@@ -25,6 +25,21 @@ let generatedVideoUrl = null;
 let recordedMimeType = '';
 let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
+let serverHasApiKey = false;
+
+function checkServerApiKey() {
+    fetch('/api/check_key')
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.has_key) {
+                serverHasApiKey = true;
+                if (openaiKeyContainer) {
+                    openaiKeyContainer.style.display = 'none';
+                }
+            }
+        })
+        .catch(() => {});
+}
 
 function initDomElements() {
     uploadZone = document.getElementById('upload-zone');
@@ -92,6 +107,7 @@ function initApp() {
         drawPlaceholder();
     }
     setupEventListeners();
+    checkServerApiKey();
 }
 
 if (document.readyState === 'loading') {
@@ -178,7 +194,9 @@ function setupEventListeners() {
     if (voiceSelect) {
         voiceSelect.addEventListener('change', () => {
             if (openaiKeyContainer) {
-                openaiKeyContainer.style.display = (voiceSelect.value !== 'google' && voiceSelect.value !== 'none') ? 'flex' : 'none';
+                const isPaid = (voiceSelect.value !== 'google' && voiceSelect.value !== 'none');
+                const hasLocalKey = openaiKeyInput && openaiKeyInput.value.trim().length > 0;
+                openaiKeyContainer.style.display = (isPaid && !serverHasApiKey && !hasLocalKey) ? 'flex' : 'none';
             }
             stopAllAudioPreviews();
         });
@@ -189,7 +207,7 @@ function setupEventListeners() {
     if (savedKey && openaiKeyInput) {
         openaiKeyInput.value = savedKey;
         if (openaiKeyContainer && voiceSelect && voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
-            openaiKeyContainer.style.display = 'flex';
+            openaiKeyContainer.style.display = (!serverHasApiKey && !openaiKeyInput.value.trim()) ? 'flex' : 'none';
         }
     }
 
@@ -421,17 +439,21 @@ async function toggleVoicePreview() {
     }
 
     let apiKey = openaiKeyInput ? openaiKeyInput.value.trim() : '';
-    if (voice !== 'google' && voice !== 'none' && !apiKey) {
+    if (voice !== 'google' && voice !== 'none' && !apiKey && !serverHasApiKey) {
         let backendAvailable = false;
         try {
-            const checkResp = await fetch(`/api/tts?text=test&voice=${voice}`);
-            if (checkResp.ok) backendAvailable = true;
+            const checkResp = await fetch('/api/check_key');
+            const data = await checkResp.json();
+            if (data && data.has_key) {
+                serverHasApiKey = true;
+                backendAvailable = true;
+            }
         } catch(e) {}
 
         if (!backendAvailable) {
             if (openaiKeyContainer) openaiKeyContainer.style.display = 'flex';
             if (openaiKeyInput) openaiKeyInput.focus();
-            alert('유료 목소리 미리듣기를 사용하시려면 OpenAI API Key(sk-...)를 입력해 주세요.\n\n(Key 없이 사용하시려면 "기본 여성 목소리(무료)"를 선택해 주세요.)');
+            alert('유료 목소리를 사용하시려면 서버 프로젝트 폴더에 openai_key.txt 파일을 생성하여 API Key(sk-...)를 등록하시거나, 화면 하단에 Key를 직접 입력해 주세요.\n\n(Key 없이 사용하시려면 "기본 여성 목소리(무료)"를 선택해 주세요.)');
             return;
         }
     }
@@ -1087,17 +1109,21 @@ async function generateShortsVideo() {
     const voice = voiceSelect.value;
     let apiKey = openaiKeyInput.value.trim();
 
-    if (voice !== 'google' && voice !== 'none' && !apiKey) {
+    if (voice !== 'google' && voice !== 'none' && !apiKey && !serverHasApiKey) {
         let backendAvailable = false;
         try {
-            const checkResp = await fetch(`/api/tts?text=test&voice=${voice}`);
-            if (checkResp.ok) backendAvailable = true;
+            const checkResp = await fetch('/api/check_key');
+            const data = await checkResp.json();
+            if (data && data.has_key) {
+                serverHasApiKey = true;
+                backendAvailable = true;
+            }
         } catch(e) {}
 
         if (!backendAvailable) {
             openaiKeyContainer.style.display = 'flex';
             openaiKeyInput.focus();
-            alert('모바일/웹 환경에서 선택하신 유료 AI 목소리를 사용하시려면 OpenAI API Key(sk-...)를 입력해 주세요.\n\n(API Key가 없으신 경우 "기본 여성 목소리(무료)"를 선택하시면 무제한 무료로 영상을 만드실 수 있습니다.)');
+            alert('유료 목소리를 사용하시려면 서버 프로젝트 폴더에 openai_key.txt 파일을 생성하여 API Key(sk-...)를 등록하시거나, 화면 하단에 Key를 직접 입력해 주세요.\n\n(API Key가 없으신 경우 "기본 여성 목소리(무료)"를 선택하시면 무제한 무료로 영상을 만드실 수 있습니다.)');
             return;
         }
     }

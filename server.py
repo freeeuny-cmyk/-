@@ -20,6 +20,8 @@ def get_saved_api_key():
                 with open(fname, 'r', encoding='utf-8') as f:
                     for line in f:
                         s = line.strip()
+                        if not s or s.startswith('#'):
+                            continue
                         if s.startswith('OPENAI_API_KEY='):
                             return s.split('=', 1)[1].strip('"\' ')
                         elif s.startswith('sk-'):
@@ -49,6 +51,15 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed_url = urllib.parse.urlparse(self.path)
+        if parsed_url.path == '/api/check_key':
+            has_key = bool(get_saved_api_key())
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'has_key': has_key}).encode('utf-8'))
+            return
+
         if parsed_url.path == '/api/tts':
             query = urllib.parse.parse_qs(parsed_url.query)
             text = query.get('text', [''])[0]
@@ -58,7 +69,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             if text:
                 try:
                     audio_data = None
-                    if api_key:
+                    if voice != 'google' and api_key:
                         try:
                             # OpenAI TTS API Call
                             url = "https://api.openai.com/v1/audio/speech"
@@ -80,11 +91,11 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                             with urllib.request.urlopen(req) as response:
                                 audio_data = response.read()
                         except Exception as oai_err:
-                            sys.stderr.write(f"OpenAI TTS error: {oai_err}, falling back to Google TTS\n")
+                            sys.stderr.write(f"OpenAI TTS error: {oai_err}\n")
                             audio_data = None
-                    
-                    if not audio_data:
-                        # Fallback: Google Translate TTS URL
+
+                    if not audio_data and voice == 'google':
+                        # Google Translate TTS URL
                         url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q={urllib.parse.quote(text)}"
                         req = urllib.request.Request(
                             url,
@@ -93,11 +104,17 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         with urllib.request.urlopen(req) as response:
                             audio_data = response.read()
                         
-                    self.send_response(200)
-                    self.send_header('Content-Type', 'audio/mpeg')
-                    self.send_header('Access-Control-Allow-Origin', '*')
-                    self.end_headers()
-                    self.wfile.write(audio_data)
+                    if audio_data:
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'audio/mpeg')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(audio_data)
+                    else:
+                        self.send_response(401 if (voice != 'google' and not api_key) else 500)
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(b"OpenAI API Key required or fetch failed")
                 except Exception as e:
                     self.send_response(500)
                     self.end_headers()
