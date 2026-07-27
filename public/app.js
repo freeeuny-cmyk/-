@@ -512,11 +512,13 @@ async function toggleVoicePreview() {
             return;
         }
 
-        const vSource = voiceCtx.createBufferSource();
-        vSource.buffer = decodedBuffer;
-        if (!isNaN(speed) && speed > 0) {
-            vSource.playbackRate.value = speed;
+        let finalPreviewBuffer = decodedBuffer;
+        if (Math.abs(speed - 1.0) > 0.05 && decodedBuffer.duration > 0.1) {
+            finalPreviewBuffer = adjustAudioBufferSpeed(voiceCtx, decodedBuffer, speed);
         }
+
+        const vSource = voiceCtx.createBufferSource();
+        vSource.buffer = finalPreviewBuffer;
         vSource.connect(voiceCtx.destination);
 
         previewAudioElementVoice = { ctx: voiceCtx, source: vSource };
@@ -1252,15 +1254,10 @@ async function generateShortsVideo() {
         const audioStartTime = audioContext.currentTime + 0.1;
 
         // Play TTS voices at designated times
-        const speed = parseFloat(voiceSpeed.value);
         slidesData.forEach(slide => {
             if (slide.audioBuffer) {
                 const voiceSource = audioContext.createBufferSource();
                 voiceSource.buffer = slide.audioBuffer;
-                
-                if (!isNaN(speed) && speed > 0) {
-                    voiceSource.playbackRate.value = speed;
-                }
                 
                 // Route to recording destination
                 voiceSource.connect(recDest);
