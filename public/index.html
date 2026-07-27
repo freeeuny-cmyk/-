@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -15,6 +17,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css?v=20260724_v300_preview_safe">
     <style>
+        :root {
+            color-scheme: light !important;
+        }
+        html, body {
+            color-scheme: light !important;
+            background-color: #f8f6f0 !important;
+            color: #1e261f !important;
+        }
+        @media (max-width: 768px) {
+            .btn-qr-badge {
+                display: none !important;
+            }
+        }
         /* Force Immediate Mobile Responsive Styles (Bypass Mobile Cache) */
         .mobile-block {
             display: inline-block;

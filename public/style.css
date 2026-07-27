@@ -4,6 +4,7 @@
    ========================================================================== */
 
 :root {
+    color-scheme: light !important;
     /* Color Palette */
     --bg-main: #f8f6f0;            /* Warm Eco Cream Sand */
     --bg-card: #ffffff;            /* Pure White Card */
@@ -34,6 +35,12 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+}
+
+html, body {
+    color-scheme: light !important;
+    background-color: #f8f6f0 !important;
+    color: #1e261f !important;
 }
 
 body {
