@@ -1600,12 +1600,14 @@ function renderFrameAtTime(time) {
     }
 
     // Subtitle Custom Parameters
-    const pos = subtitlePosition.value || 'bottom';
-    let color = subtitleColorPreset.value;
+    const pos = (subtitlePosition && subtitlePosition.value) ? subtitlePosition.value : 'bottom';
+    const showSubtitle = (pos !== 'none') && Boolean(activeSlide.text);
+    
+    let color = subtitleColorPreset ? subtitleColorPreset.value : '#ffffff';
     if (color === 'custom') {
-        color = subtitleColor.value || '#ffffff';
+        color = (subtitleColor ? subtitleColor.value : '#ffffff') || '#ffffff';
     }
-    const size = parseInt(subtitleSize.value) || 34;
+    const size = parseInt(subtitleSize ? subtitleSize.value : 34) || 34;
     const lineHeight = Math.round(size * 1.35);
     
     // Set Font before wrapping to measure correct text width
@@ -1614,11 +1616,11 @@ function renderFrameAtTime(time) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    const lines = activeSlide.text ? wrapText(ctx, activeSlide.text, canvas.width - 100) : [];
+    const lines = showSubtitle ? wrapText(ctx, activeSlide.text, canvas.width - 100) : [];
     const totalTextHeight = lines.length * lineHeight;
     
     // 1. Render optimal background overlay based on subtitle position for maximum legibility
-    if (activeSlide.text && lines.length > 0) {
+    if (showSubtitle && lines.length > 0) {
         if (pos === 'top') {
             // Top Dark Gradient Overlay (fade down)
             const grad = ctx.createLinearGradient(0, 320, 0, 0);
@@ -1643,17 +1645,17 @@ function renderFrameAtTime(time) {
             ctx.fillRect(0, canvas.height - 350, canvas.width, 350);
         }
     } else {
-        // Draw default bottom gradient when no text is present to maintain standard look
-        const grad = ctx.createLinearGradient(0, canvas.height - 350, 0, canvas.height);
+        // Draw subtle bottom gradient for watermark readability when no subtitles are rendered
+        const grad = ctx.createLinearGradient(0, canvas.height - 200, 0, canvas.height);
         grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(0.4, 'rgba(0,0,0,0.6)');
-        grad.addColorStop(1, 'rgba(0,0,0,0.95)');
+        grad.addColorStop(0.5, 'rgba(0,0,0,0.4)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.85)');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, canvas.height - 350, canvas.width, 350);
+        ctx.fillRect(0, canvas.height - 200, canvas.width, 200);
     }
 
     // 2. Render Subtitle Captions
-    if (activeSlide.text && lines.length > 0) {
+    if (showSubtitle && lines.length > 0) {
         ctx.fillStyle = color;
         ctx.font = `bold ${size}px "Noto Sans KR", sans-serif`;
         ctx.textAlign = 'center';
