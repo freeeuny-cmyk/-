@@ -348,6 +348,29 @@ function setupEventListeners() {
             stopAllAudioPreviews();
         });
     }
+
+    // QR Code Modal Listeners
+    const btnShowQr = document.getElementById('btn-show-qr');
+    const btnCloseQr = document.getElementById('btn-close-qr');
+    const qrModal = document.getElementById('qr-modal');
+
+    if (btnShowQr && qrModal) {
+        btnShowQr.addEventListener('click', () => {
+            qrModal.style.display = 'flex';
+        });
+    }
+    if (btnCloseQr && qrModal) {
+        btnCloseQr.addEventListener('click', () => {
+            qrModal.style.display = 'none';
+        });
+    }
+    if (qrModal) {
+        qrModal.addEventListener('click', (e) => {
+            if (e.target === qrModal) {
+                qrModal.style.display = 'none';
+            }
+        });
+    }
 }
 
 // Standalone Audio Preview State
