@@ -356,43 +356,94 @@ let previewAudioElementVoice = null;
 let isBgmPreviewPlaying = false;
 let isVoicePreviewPlaying = false;
 
+// Preset BGM files mapping and decoder cache
+const bgmFileMap = {
+    'fields': 'Fields_Of_Opportunity.mp3',
+    'tomorrow': encodeURIComponent('내일의_들판을_그리며.mp3'),
+    'innovation': encodeURIComponent('푸른_들녘의_혁신.mp3')
+};
+const bgmBufferCache = {};
+
+async function loadBgmAudioBuffer(audioCtx, bgmKey) {
+    if (bgmKey === 'custom') return bgmAudioBuffer;
+    const fileName = bgmFileMap[bgmKey];
+    if (!fileName) return null;
+
+    if (bgmBufferCache[bgmKey]) return bgmBufferCache[bgmKey];
+
+    try {
+        const response = await fetch(fileName);
+        if (!response.ok) return null;
+        const arrayBuf = await response.arrayBuffer();
+        const decoded = await new Promise((resolve) => {
+            audioCtx.decodeAudioData(arrayBuf, resolve, () => resolve(null));
+        });
+        if (decoded) {
+            bgmBufferCache[bgmKey] = decoded;
+            return decoded;
+        }
+    } catch(e) {
+        console.warn('Error loading preset BGM file:', e);
+    }
+    return null;
+}
+
 // 1. Toggle BGM Preview safely
-function toggleBgmPreview() {
+async function toggleBgmPreview() {
     if (isBgmPreviewPlaying) {
         stopBgmPreview();
         updateAllPreviewButtonUI();
         return;
     }
 
-    if (!bgmSelect || bgmSelect.value === 'none') {
+    const selVal = bgmSelect ? bgmSelect.value : 'none';
+    if (!bgmSelect || selVal === 'none') {
         alert('선택된 배경음악이 없습니다.');
         return;
     }
 
-    if (bgmSelect.value === 'custom' && !bgmAudioBuffer) {
+    if (selVal === 'custom' && !bgmAudioBuffer) {
         alert('내 컴퓨터에서 BGM 음악 파일을 선택한 후 미리듣기를 실행하세요.');
         return;
+    }
+
+    if (btnPreviewBgm) {
+        btnPreviewBgm.classList.add('loading');
+        btnPreviewBgm.querySelector('span').innerText = '음악 로딩 중...';
+        btnPreviewBgm.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
     }
 
     try {
         const previewAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (previewAudioCtx.state === 'suspended') {
-            previewAudioCtx.resume();
+            await previewAudioCtx.resume();
         }
 
         let bgmNode = null;
-        if (bgmSelect.value === 'custom' && bgmAudioBuffer) {
+        const presetBuffer = await loadBgmAudioBuffer(previewAudioCtx, selVal);
+        const targetBuffer = (selVal === 'custom') ? bgmAudioBuffer : presetBuffer;
+
+        if (targetBuffer) {
             bgmNode = previewAudioCtx.createBufferSource();
-            bgmNode.buffer = bgmAudioBuffer;
+            bgmNode.buffer = targetBuffer;
             bgmNode.loop = true;
             const gain = previewAudioCtx.createGain();
             gain.gain.value = parseFloat(bgmVolume ? bgmVolume.value : 0.35);
             bgmNode.connect(gain);
             gain.connect(previewAudioCtx.destination);
             bgmNode.start(0);
-        } else {
+        } else if (selVal !== 'none') {
             bgmNode = createSynthBgmSource(previewAudioCtx, 0, 90);
             bgmNode.connect(previewAudioCtx.destination);
+        }
+
+        if (btnPreviewBgm) {
+            btnPreviewBgm.classList.remove('loading');
+        }
+
+        if (!bgmNode) {
+            stopBgmPreview();
+            return;
         }
 
         previewAudioElementBgm = { ctx: previewAudioCtx, source: bgmNode };
@@ -1270,12 +1321,15 @@ async function generateShortsVideo() {
             }
         });
 
-        // 6. Play BGM (either custom uploaded or synthetic)
+        // 6. Play BGM (preset MP3, custom uploaded, or synthetic)
         let bgmSource = null;
-        if (bgmSelect.value === 'custom' && bgmAudioBuffer) {
-            // Custom Uploaded BGM
+        const selBgmVal = bgmSelect.value;
+        const presetBuffer = await loadBgmAudioBuffer(audioContext, selBgmVal);
+        const targetBuffer = (selBgmVal === 'custom') ? bgmAudioBuffer : presetBuffer;
+
+        if (targetBuffer) {
             bgmSource = audioContext.createBufferSource();
-            bgmSource.buffer = bgmAudioBuffer;
+            bgmSource.buffer = targetBuffer;
             bgmSource.loop = true;
             
             const bgmGain = audioContext.createGain();
@@ -1287,8 +1341,7 @@ async function generateShortsVideo() {
             bgmGain.connect(audioContext.destination);
             
             bgmSource.start(audioStartTime);
-        } else {
-            // Synthesized ambient or upbeat BGM locked to audioStartTime
+        } else if (selBgmVal !== 'none') {
             const synthBgmNode = createSynthBgmSource(audioContext, audioStartTime);
             synthBgmNode.connect(recDest);
             synthBgmNode.connect(audioContext.destination);
