@@ -1756,16 +1756,16 @@ function drawFixedWatermark(ctx) {
     const watermarkY = canvas.height - 65;
     const logoText = "경상북도농업기술원";
 
-    ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
+    ctx.font = 'bold 30px "Noto Sans KR", sans-serif';
     const textWidth = ctx.measureText(logoText).width;
     
     // Calculate logo aspect ratio
-    const logoHeight = 28;
+    const logoHeight = 36;
     const logoWidth = (gbLogoImg.complete && gbLogoImg.naturalWidth && gbLogoImg.naturalHeight)
         ? Math.round(logoHeight * (gbLogoImg.naturalWidth / gbLogoImg.naturalHeight))
-        : 36;
+        : 44;
 
-    const spacing = 12;
+    const spacing = 14;
     const totalWidth = logoWidth + spacing + textWidth;
     const startX = (canvas.width - totalWidth) / 2;
     const logoY = watermarkY - (logoHeight / 2);
@@ -1778,20 +1778,20 @@ function drawFixedWatermark(ctx) {
         ctx.save();
         ctx.fillStyle = '#0077b6';
         ctx.beginPath();
-        ctx.arc(startX + 14, watermarkY, 14, 0, Math.PI * 2);
+        ctx.arc(startX + 18, watermarkY, 18, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 13px "Noto Sans KR", sans-serif';
+        ctx.font = 'bold 15px "Noto Sans KR", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('GB', startX + 14, watermarkY);
+        ctx.fillText('GB', startX + 18, watermarkY);
         ctx.restore();
     }
 
     // Draw "경상북도농업기술원" Text
     const textX = startX + logoWidth + spacing;
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 23px "Noto Sans KR", sans-serif';
+    ctx.font = 'bold 30px "Noto Sans KR", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(logoText, textX, watermarkY);
