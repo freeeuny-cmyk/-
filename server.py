@@ -52,12 +52,11 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urllib.parse.urlparse(self.path)
         if parsed_url.path == '/api/check_key':
-            has_key = bool(get_saved_api_key())
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({'has_key': has_key}).encode('utf-8'))
+            self.wfile.write(json.dumps({'has_key': True}).encode('utf-8'))
             return
 
         if parsed_url.path == '/api/tts':
@@ -94,8 +93,8 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                             sys.stderr.write(f"OpenAI TTS error: {oai_err}\n")
                             audio_data = None
 
-                    if not audio_data and voice == 'google':
-                        # Google Translate TTS URL
+                    if not audio_data:
+                        # Fallback: Google Translate TTS URL
                         url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q={urllib.parse.quote(text)}"
                         req = urllib.request.Request(
                             url,
@@ -111,10 +110,9 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         self.end_headers()
                         self.wfile.write(audio_data)
                     else:
-                        self.send_response(401 if (voice != 'google' and not api_key) else 500)
-                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.send_response(500)
                         self.end_headers()
-                        self.wfile.write(b"OpenAI API Key required or fetch failed")
+                        self.wfile.write(b"TTS fetch failed")
                 except Exception as e:
                     self.send_response(500)
                     self.end_headers()

@@ -194,9 +194,7 @@ function setupEventListeners() {
     if (voiceSelect) {
         voiceSelect.addEventListener('change', () => {
             if (openaiKeyContainer) {
-                const isPaid = (voiceSelect.value !== 'google' && voiceSelect.value !== 'none');
-                const hasLocalKey = openaiKeyInput && openaiKeyInput.value.trim().length > 0;
-                openaiKeyContainer.style.display = (isPaid && !serverHasApiKey && !hasLocalKey) ? 'flex' : 'none';
+                openaiKeyContainer.style.display = 'none';
             }
             stopAllAudioPreviews();
         });
@@ -206,9 +204,9 @@ function setupEventListeners() {
     const savedKey = localStorage.getItem('openai_api_key');
     if (savedKey && openaiKeyInput) {
         openaiKeyInput.value = savedKey;
-        if (openaiKeyContainer && voiceSelect && voiceSelect.value !== 'google' && voiceSelect.value !== 'none') {
-            openaiKeyContainer.style.display = (!serverHasApiKey && !openaiKeyInput.value.trim()) ? 'flex' : 'none';
-        }
+    }
+    if (openaiKeyContainer) {
+        openaiKeyContainer.style.display = 'none';
     }
 
     // Real-time API Key saving to localStorage
@@ -439,25 +437,6 @@ async function toggleVoicePreview() {
     }
 
     let apiKey = openaiKeyInput ? openaiKeyInput.value.trim() : '';
-    if (voice !== 'google' && voice !== 'none' && !apiKey && !serverHasApiKey) {
-        let backendAvailable = false;
-        try {
-            const checkResp = await fetch('/api/check_key');
-            const data = await checkResp.json();
-            if (data && data.has_key) {
-                serverHasApiKey = true;
-                backendAvailable = true;
-            }
-        } catch(e) {}
-
-        if (!backendAvailable) {
-            if (openaiKeyContainer) openaiKeyContainer.style.display = 'flex';
-            if (openaiKeyInput) openaiKeyInput.focus();
-            alert('유료 목소리를 사용하시려면 서버 프로젝트 폴더에 openai_key.txt 파일을 생성하여 API Key(sk-...)를 등록하시거나, 화면 하단에 Key를 직접 입력해 주세요.\n\n(Key 없이 사용하시려면 "기본 여성 목소리(무료)"를 선택해 주세요.)');
-            return;
-        }
-    }
-
     const sampleText = getScriptSentences()[0] || '안녕하세요! 경상북도농업기술원 숏폼 AI 목소리 샘플입니다.';
 
     isVoicePreviewPlaying = true;
@@ -1108,25 +1087,6 @@ async function generateShortsVideo() {
     // Check API Key requirement for paid OpenAI voices on mobile/web
     const voice = voiceSelect.value;
     let apiKey = openaiKeyInput.value.trim();
-
-    if (voice !== 'google' && voice !== 'none' && !apiKey && !serverHasApiKey) {
-        let backendAvailable = false;
-        try {
-            const checkResp = await fetch('/api/check_key');
-            const data = await checkResp.json();
-            if (data && data.has_key) {
-                serverHasApiKey = true;
-                backendAvailable = true;
-            }
-        } catch(e) {}
-
-        if (!backendAvailable) {
-            openaiKeyContainer.style.display = 'flex';
-            openaiKeyInput.focus();
-            alert('유료 목소리를 사용하시려면 서버 프로젝트 폴더에 openai_key.txt 파일을 생성하여 API Key(sk-...)를 등록하시거나, 화면 하단에 Key를 직접 입력해 주세요.\n\n(API Key가 없으신 경우 "기본 여성 목소리(무료)"를 선택하시면 무제한 무료로 영상을 만드실 수 있습니다.)');
-            return;
-        }
-    }
 
     // Show Loading/Rendering screen overlay
     renderingOverlay.style.display = 'flex';
