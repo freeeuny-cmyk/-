@@ -1735,46 +1735,44 @@ function drawFixedWatermark(ctx) {
 
     // 1. Top-Right Slogan Watermark ("경북의 힘!으로 새로운 대한민국")
     if (gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
-        const sloganHeight = 46;
+        const sloganHeight = 48;
         const sloganWidth = Math.round(sloganHeight * (gbSloganImg.naturalWidth / gbSloganImg.naturalHeight));
         const sloganX = canvas.width - sloganWidth - 36;
-        const sloganY = 48;
+        const sloganY = 50;
 
-        // Draw crisp white pill background container so dark slogan text stands out with 100% clarity!
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 3;
+        
+        // Render crisp white halo outline directly around letter strokes (NO white background box!)
+        const offsets = [
+            [-2, -2], [2, -2], [-2, 2], [2, 2],
+            [0, -2.5], [0, 2.5], [-2.5, 0], [2.5, 0],
+            [-1, -1], [1, -1], [-1, 1], [1, 1]
+        ];
+        
+        // Pass 1: White stroke outline directly around letters
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.98)';
+        ctx.shadowBlur = 3;
+        
+        offsets.forEach(([dx, dy]) => {
+            ctx.shadowOffsetX = dx;
+            ctx.shadowOffsetY = dy;
+            ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
+        });
 
-        const padX = 14;
-        const padY = 8;
-        const bgX = sloganX - padX;
-        const bgY = sloganY - padY;
-        const bgW = sloganWidth + (padX * 2);
-        const bgH = sloganHeight + (padY * 2);
-        const radius = 12;
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-        ctx.beginPath();
-        ctx.moveTo(bgX + radius, bgY);
-        ctx.lineTo(bgX + bgW - radius, bgY);
-        ctx.quadraticCurveTo(bgX + bgW, bgY, bgX + bgW, bgY + radius);
-        ctx.lineTo(bgX + bgW, bgY + bgH - radius);
-        ctx.quadraticCurveTo(bgX + bgW, bgY + bgH, bgX + bgW - radius, bgY + bgH);
-        ctx.lineTo(bgX + radius, bgY + bgH);
-        ctx.quadraticCurveTo(bgX, bgY + bgH, bgX, bgY + bgH - radius);
-        ctx.lineTo(bgX, bgY + radius);
-        ctx.quadraticCurveTo(bgX, bgY, bgX + radius, bgY);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.restore();
-
-        // Draw slogan image inside the white pill badge
-        ctx.save();
-        ctx.shadowColor = 'transparent';
+        // Pass 2: Subtle drop shadow for depth
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 6;
+        ctx.shadowOffsetX = 1.5;
+        ctx.shadowOffsetY = 1.5;
         ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
+
+        // Pass 3: Clean original logo overlay on top
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.drawImage(gbSloganImg, sloganX, sloganY, sloganWidth, sloganHeight);
+
         ctx.restore();
     } else {
         // High quality text slogan fallback if image is loading or unavailable
@@ -1783,7 +1781,9 @@ function drawFixedWatermark(ctx) {
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'top';
-        ctx.fillText('경북의 힘!으로 새로운 대한민국', canvas.width - 36, 55);
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 6;
+        ctx.fillText('경북의 힘!으로 새로운 대한민국', canvas.width - 36, 50);
         ctx.restore();
     }
 
