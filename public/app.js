@@ -359,7 +359,9 @@ let isVoicePreviewPlaying = false;
 // Preset BGM files mapping and decoder cache
 const bgmFileMap = {
     'fields': 'Fields_Of_Opportunity.mp3',
-    'tomorrow': encodeURIComponent('내일의_들판을_그리며.mp3'),
+    'calculated': 'Calculated_Rise.mp3',
+    'glass': 'Glass_Nursery.mp3',
+    'rows': 'Rows_of_Sunlight.mp3',
     'innovation': encodeURIComponent('푸른_들녘의_혁신.mp3')
 };
 const bgmBufferCache = {};
