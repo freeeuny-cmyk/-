@@ -1540,15 +1540,13 @@ function adjustAudioBufferSpeed(audioContext, buffer, speed) {
 
 // Calculate image position and motion based on aspect ratio:
 // - Landscape (Horizontal) photos (width > height): Smooth left-to-right pan over duration
-// - Portrait (Vertical & 3:4 / 4:5) photos (height >= width): Fit & center in 9:16 frame container without left-right movement
+// - Portrait (Vertical & 3:4 / 4:5 / Square) photos: 100% Width Fit (폭맞춤) centered without cropping text or edges!
 function getSlideDrawCoords(img, progress, canvasWidth, canvasHeight) {
     const canvasRatio = canvasWidth / canvasHeight; // 720 / 1280 = 0.5625
     const imgRatio = img.width / img.height;
     
     let drawWidth, drawHeight, drawX, drawY;
     
-    // Only treat wide horizontal photos (width > height * 1.08) as landscape for left-to-right panning.
-    // Portrait (9:16, 3:4, 4:5) and square photos are centered to fit the 9:16 frame cleanly!
     if (imgRatio > 1.08) {
         // Landscape (Horizontal) image: fill height and pan width smoothly from Left to Right
         drawHeight = canvasHeight;
@@ -1556,22 +1554,32 @@ function getSlideDrawCoords(img, progress, canvasWidth, canvasHeight) {
         drawX = -progress * (drawWidth - canvasWidth);
         drawY = 0;
     } else {
-        // Portrait / Vertical / Square image: Cover & center in 9:16 frame container without left-right movement!
+        // Portrait / Vertical / Square image: 100% Width Fit (폭맞춤)!
+        // Width fits canvas width exactly (drawWidth = canvasWidth), zero side cropping, zero left-right panning!
         drawWidth = canvasWidth;
         drawHeight = canvasWidth / imgRatio;
-        
-        if (drawHeight >= canvasHeight) {
-            drawX = 0;
-            drawY = (canvasHeight - drawHeight) / 2;
-        } else {
-            drawWidth = canvasHeight * imgRatio;
-            drawHeight = canvasHeight;
-            drawX = (canvasWidth - drawWidth) / 2;
-            drawY = 0;
-        }
+        drawX = 0;
+        drawY = (canvasHeight - drawHeight) / 2;
     }
     
-    return { drawX, drawY, drawWidth, drawHeight };
+    return { drawX, drawY, drawWidth, drawHeight, isPortrait: imgRatio <= 1.08 };
+}
+
+// Helper to draw slide with elegant blurred background fill for top/bottom margins on Width Fit images
+function drawSlideImageWithBackdrop(ctx, img, coords, canvasWidth, canvasHeight) {
+    if (coords.isPortrait && coords.drawHeight < canvasHeight) {
+        ctx.save();
+        ctx.filter = 'blur(22px) brightness(0.65)';
+        const bgHeight = canvasHeight;
+        const bgWidth = canvasHeight * (img.width / img.height);
+        const bgX = (canvasWidth - bgWidth) / 2;
+        ctx.drawImage(img, bgX, 0, bgWidth, bgHeight);
+        ctx.restore();
+    }
+    
+    ctx.save();
+    ctx.drawImage(img, coords.drawX, coords.drawY, coords.drawWidth, coords.drawHeight);
+    ctx.restore();
 }
 
 // Render a single Canvas frame based on current video timestamp
@@ -1596,16 +1604,13 @@ function renderFrameAtTime(time) {
     
     // Dynamic Fit & Motion Calculation:
     // 1. Horizontal (Landscape) photos: Smooth left-to-right pan
-    // 2. Vertical (Portrait) photos: Fit to 9:16 frame container centered (no left-right panning)
+    // 2. Vertical (Portrait) photos: 100% Width-Fit (폭맞춤) centered
     const slideDuration = activeSlide.endTime - activeSlide.startTime;
     const slideElapsed = time - activeSlide.startTime;
     const progress = Math.min(1.0, Math.max(0, slideElapsed / slideDuration));
     
     const activeCoords = getSlideDrawCoords(activeSlide.img, progress, canvas.width, canvas.height);
-    
-    ctx.save();
-    ctx.drawImage(activeSlide.img, activeCoords.drawX, activeCoords.drawY, activeCoords.drawWidth, activeCoords.drawHeight);
-    ctx.restore();
+    drawSlideImageWithBackdrop(ctx, activeSlide.img, activeCoords, canvas.width, canvas.height);
 
     // Cross-fade transition with next/previous slide
     const fadeDuration = 0.5; // 0.5 seconds transition
@@ -1618,7 +1623,7 @@ function renderFrameAtTime(time) {
         
         // Draw previous image in its final state (progress = 1.0)
         const prevCoords = getSlideDrawCoords(prevSlide.img, 1.0, canvas.width, canvas.height);
-        ctx.drawImage(prevSlide.img, prevCoords.drawX, prevCoords.drawY, prevCoords.drawWidth, prevCoords.drawHeight);
+        drawSlideImageWithBackdrop(ctx, prevSlide.img, prevCoords, canvas.width, canvas.height);
         ctx.restore();
     }
 
