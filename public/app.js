@@ -1338,10 +1338,10 @@ async function generateShortsVideo() {
         slidesData.forEach((slide, idx) => {
             const ttsResult = ttsResults.find(r => r.slideIndex === idx);
             
-            // Dynamic duration: Use exact TTS audio buffer duration when voice is present so speed adjustments sync slide transitions perfectly
+            // Dynamic duration: Math.max(user minimum duration, TTS audio duration) so voice is never cut off and slides never flip too fast
             let duration = userDuration;
             if (ttsResult && voice !== 'none' && ttsResult.buffer && ttsResult.buffer.duration > 0.1) {
-                duration = ttsResult.buffer.duration;
+                duration = Math.max(userDuration, ttsResult.buffer.duration);
             }
             
             slide.audioBuffer = (ttsResult && voice !== 'none') ? ttsResult.buffer : null;
