@@ -27,6 +27,19 @@ let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 let serverHasApiKey = false;
 
+const DEFAULT_OPENAI_KEY = atob("c2stcHJvai1sT05KZXJUT1ZGM1pCSTBBMTVTaUtlQ2JwLW5lZ3lPdnkwLXZBaWRKVlJxOWRocU40TWp0T3lsYzVqWk84SFN6Uk03YkRJNHozbVQzQmxia0ZKX0Fmc0t4Rm5qUUp3ZW1DVXp3NjVtLU1IY2J1OGNBZkdLazNYU0JWVHk5RmFXRXI4Yk5EaF9PMkcxU21kZ1hMYnNYSTYzNEYzSUE=");
+
+function getEffectiveApiKey() {
+    if (typeof openaiKeyInput !== 'undefined' && openaiKeyInput && openaiKeyInput.value && openaiKeyInput.value.trim().startsWith('sk-')) {
+        return openaiKeyInput.value.trim();
+    }
+    const savedKey = localStorage.getItem('openai_api_key');
+    if (savedKey && savedKey.trim().startsWith('sk-')) {
+        return savedKey.trim();
+    }
+    return DEFAULT_OPENAI_KEY;
+}
+
 function checkServerApiKey() {
     fetch('/api/check_key')
         .then(r => r.json())
@@ -200,18 +213,7 @@ function setupEventListeners() {
         });
     }
 
-    const DEFAULT_OPENAI_KEY = atob("c2stcHJvai1sT05KZXJUT1ZGM1pCSTBBMTVTaUtlQ2JwLW5lZ3lPdnkwLXZBaWRKVlJxOWRocU40TWp0T3lsYzVqWk84SFN6Uk03YkRJNHozbVQzQmxia0ZKX0Fmc0t4Rm5qUUp3ZW1DVXp3NjVtLU1IY2J1OGNBZkdLazNYU0JWVHk5RmFXRXI4Yk5EaF9PMkcxU21kZ1hMYnNYSTYzNEYzSUE=");
 
-    function getEffectiveApiKey() {
-        if (openaiKeyInput && openaiKeyInput.value && openaiKeyInput.value.trim().startsWith('sk-')) {
-            return openaiKeyInput.value.trim();
-        }
-        const savedKey = localStorage.getItem('openai_api_key');
-        if (savedKey && savedKey.trim().startsWith('sk-')) {
-            return savedKey.trim();
-        }
-        return DEFAULT_OPENAI_KEY;
-    }
 
     // Load saved API key on startup or set default
     const savedKey = localStorage.getItem('openai_api_key');
@@ -1236,7 +1238,7 @@ async function generateShortsVideo() {
             
             // Save or clear API key on generate
             let apiKey = getEffectiveApiKey();
-            if (saveKeyCheckbox.checked && apiKey) {
+            if (saveKeyCheckbox && saveKeyCheckbox.checked && apiKey) {
                 localStorage.setItem('openai_api_key', apiKey);
             }
 
