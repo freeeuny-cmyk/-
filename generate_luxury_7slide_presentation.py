@@ -134,15 +134,46 @@ def build_presentation():
     fc.line.color.rgb = RGBColor(40, 75, 60)
     fc.line.width = Pt(1)
 
-    tb = s1.shapes.add_textbox(Inches(1.5), Inches(5.25), Inches(10.3), Inches(0.8))
+    tb = s1.shapes.add_textbox(Inches(1.5), Inches(5.2), Inches(6.5), Inches(0.9))
     tf = tb.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = "• 발표팀: 팀 3 (이동은, 김영아, 이미향)\n• 라이브 서비스 주소: https://gban-shorts.onrender.com"
+    p.text = "• 발표팀: 팀 3 (이동은, 김영아, 이미향)"
     p.font.name = "Malgun Gothic"
-    p.font.size = Pt(16)
+    p.font.size = Pt(15)
     p.font.bold = True
     p.font.color.rgb = RGBColor(255, 255, 255)
+
+    p2 = tf.add_paragraph()
+    p2.text = "• 라이브 서비스 주소: "
+    p2.font.name = "Malgun Gothic"
+    p2.font.size = Pt(15)
+    p2.font.bold = True
+    p2.font.color.rgb = RGBColor(255, 255, 255)
+
+    run = p2.add_run()
+    run.text = "https://gban-shorts.onrender.com"
+    run.font.name = "Malgun Gothic"
+    run.font.size = Pt(15)
+    run.font.bold = True
+    run.font.underline = True
+    run.font.color.rgb = RGBColor(52, 211, 153)
+    run.hyperlink.address = "https://gban-shorts.onrender.com/"
+
+    # Clickable Button Shape on Slide 1
+    btn1 = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(8.3), Inches(5.35), Inches(3.4), Inches(0.6))
+    btn1.fill.solid()
+    btn1.fill.fore_color.rgb = RGBColor(16, 185, 129)
+    btn1.line.color.rgb = RGBColor(52, 211, 153)
+    btn1.click_action.hyperlink.address = "https://gban-shorts.onrender.com/"
+    btf1 = btn1.text_frame
+    bp1 = btf1.paragraphs[0]
+    bp1.text = "🚀 라이브 스튜디오 바로가기 🔗"
+    bp1.font.name = "Malgun Gothic"
+    bp1.font.size = Pt(13)
+    bp1.font.bold = True
+    bp1.font.color.rgb = RGBColor(255, 255, 255)
+    bp1.alignment = PP_ALIGN.CENTER
 
     # =========================================================================
     # SLIDE 2: Background & Problem (배경 및 기획 의도)
@@ -479,6 +510,21 @@ def build_presentation():
         p.font.size = Pt(15)
         p.font.color.rgb = RGBColor(255, 255, 255)
         p.space_before = Pt(8)
+
+    # Clickable Button Shape on Slide 7
+    btn7 = s7.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.5), Inches(5.8), Inches(4.5), Inches(0.7))
+    btn7.fill.solid()
+    btn7.fill.fore_color.rgb = RGBColor(16, 185, 129)
+    btn7.line.color.rgb = RGBColor(52, 211, 153)
+    btn7.click_action.hyperlink.address = "https://gban-shorts.onrender.com/"
+    btf7 = btn7.text_frame
+    bp7 = btf7.paragraphs[0]
+    bp7.text = "🌐 라이브 서비스 시연 바로가기 (클릭) 🔗"
+    bp7.font.name = "Malgun Gothic"
+    bp7.font.size = Pt(14)
+    bp7.font.bold = True
+    bp7.font.color.rgb = RGBColor(255, 255, 255)
+    bp7.alignment = PP_ALIGN.CENTER
 
     # Save Presentations
     out_pptx_desktop = os.path.abspath(os.path.join(os.path.expanduser('~'), 'Desktop', 'GBAN_AI_숏폼_스튜디오_발표자료_7장.pptx'))
