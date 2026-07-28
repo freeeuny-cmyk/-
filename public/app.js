@@ -493,7 +493,7 @@ function stopBgmPreview() {
     isBgmPreviewPlaying = false;
     if (btnPreviewBgm) {
         btnPreviewBgm.classList.remove('playing');
-        btnPreviewBgm.querySelector('span').innerText = '배경음악 미리듣기';
+        btnPreviewBgm.querySelector('span').innerText = '배경음악';
         btnPreviewBgm.querySelector('i').className = 'fa-solid fa-music';
     }
 }
@@ -625,7 +625,7 @@ function stopVoicePreview() {
     isVoicePreviewPlaying = false;
     if (btnPreviewVoice) {
         btnPreviewVoice.classList.remove('playing', 'loading');
-        btnPreviewVoice.querySelector('span').innerText = '목소리 미리듣기';
+        btnPreviewVoice.querySelector('span').innerText = '목소리';
         btnPreviewVoice.querySelector('i').className = 'fa-solid fa-volume-high';
     }
 }
@@ -652,7 +652,7 @@ function stopAllAudioPreviews() {
     stopVoicePreview();
     if (btnPreviewAll) {
         btnPreviewAll.classList.remove('playing');
-        btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+        btnPreviewAll.querySelector('span').innerText = '음악+목소리';
         btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
     }
 }
@@ -660,7 +660,7 @@ function stopAllAudioPreviews() {
 function updateAllPreviewButtonUI() {
     if (!isBgmPreviewPlaying && !isVoicePreviewPlaying && btnPreviewAll) {
         btnPreviewAll.classList.remove('playing');
-        btnPreviewAll.querySelector('span').innerText = '음악 + 목소리 함께 듣기';
+        btnPreviewAll.querySelector('span').innerText = '음악+목소리';
         btnPreviewAll.querySelector('i').className = 'fa-solid fa-headphones';
     }
 }
