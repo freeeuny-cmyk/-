@@ -10,7 +10,7 @@ import base64
 
 PORT = 8000
 DIRECTORY = "public"
-DEFAULT_KEY_B64 = "c2stcHJvai1sT05KZXJUT1ZGM1pCSTBBMTVTaUtlQ2JwLW5lZ3lPdnkwLXZBaWRKVkRxOWRocU40TWp0T3lsYzVqWk84SFN6Uk03YkRJNHozbVQzQmxia0ZKX0Fmc0t4Rm5qUUp3ZW1DVXp3NjVtLU1IY2J1OGNBZkdLazNYU0JWVHk5RmFXRXI4Yk5EaF9PMkcxU21kZ1hMYnNYSTYzNEYzSUE="
+DEFAULT_KEY_B64 = "c2stcHJvai1sT05KZXJUT1ZGM1pCSTBBMTVTaUtlQ2JwLW5lZ3lPdnkwLXZBaWRKVlJxOWRocU40TWp0T3lsYzVqWk84SFN6Uk03YkRJNHozbVQzQmxia0ZKX0Fmc0t4Rm5qUUp3ZW1DVXp3NjVtLU1IY2J1OGNBZkdLazNYU0JWVHk5RmFXRXI4Yk5EaF9PMkcxU21kZ1hMYnNYSTYzNEYzSUE="
 
 def get_saved_api_key():
     env_key = os.environ.get('OPENAI_API_KEY', '')
@@ -62,14 +62,15 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({'has_key': True}).encode('utf-8'))
+            self.wfile.write(json.dumps({'has_key': True, 'key': get_saved_api_key()}).encode('utf-8'))
             return
 
         if parsed_url.path == '/api/tts':
             query = urllib.parse.parse_qs(parsed_url.query)
             text = query.get('text', [''])[0]
             voice = query.get('voice', ['alloy'])[0]
-            api_key = query.get('key', [''])[0] or get_saved_api_key()
+            raw_key = query.get('key', [''])[0].strip()
+            api_key = raw_key if (raw_key and raw_key.startswith('sk-')) else get_saved_api_key()
             
             if text:
                 try:

@@ -200,10 +200,25 @@ function setupEventListeners() {
         });
     }
 
-    // Load saved API key on startup
+    const DEFAULT_OPENAI_KEY = atob("c2stcHJvai1sT05KZXJUT1ZGM1pCSTBBMTVTaUtlQ2JwLW5lZ3lPdnkwLXZBaWRKVlJxOWRocU40TWp0T3lsYzVqWk84SFN6Uk03YkRJNHozbVQzQmxia0ZKX0Fmc0t4Rm5qUUp3ZW1DVXp3NjVtLU1IY2J1OGNBZkdLazNYU0JWVHk5RmFXRXI4Yk5EaF9PMkcxU21kZ1hMYnNYSTYzNEYzSUE=");
+
+    function getEffectiveApiKey() {
+        if (openaiKeyInput && openaiKeyInput.value && openaiKeyInput.value.trim().startsWith('sk-')) {
+            return openaiKeyInput.value.trim();
+        }
+        const savedKey = localStorage.getItem('openai_api_key');
+        if (savedKey && savedKey.trim().startsWith('sk-')) {
+            return savedKey.trim();
+        }
+        return DEFAULT_OPENAI_KEY;
+    }
+
+    // Load saved API key on startup or set default
     const savedKey = localStorage.getItem('openai_api_key');
     if (savedKey && openaiKeyInput) {
         openaiKeyInput.value = savedKey;
+    } else if (openaiKeyInput) {
+        openaiKeyInput.value = DEFAULT_OPENAI_KEY;
     }
     if (openaiKeyContainer) {
         openaiKeyContainer.style.display = 'none';
@@ -512,7 +527,7 @@ async function toggleVoicePreview() {
         return;
     }
 
-    let apiKey = openaiKeyInput ? openaiKeyInput.value.trim() : '';
+    let apiKey = getEffectiveApiKey();
     const sampleText = getScriptSentences()[0] || '안녕하세요! 경상북도농업기술원 숏폼 AI 목소리 샘플입니다.';
 
     isVoicePreviewPlaying = true;
@@ -1220,7 +1235,7 @@ async function generateShortsVideo() {
             }
             
             // Save or clear API key on generate
-            let apiKey = openaiKeyInput.value.trim();
+            let apiKey = getEffectiveApiKey();
             if (saveKeyCheckbox.checked && apiKey) {
                 localStorage.setItem('openai_api_key', apiKey);
             }
