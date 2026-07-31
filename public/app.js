@@ -27,7 +27,7 @@ let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 let serverHasApiKey = false;
 
-const DEFAULT_OPENAI_KEY = atob("c2stcHJvai1sT05KZXJUT1ZGM1pCSTBBMTVTaUtlQ2JwLW5lZ3lPdnkwLXZBaWRKVlJxOWRocU40TWp0T3lsYzVqWk84SFN6Uk03YkRJNHozbVQzQmxia0ZKX0Fmc0t4Rm5qUUp3ZW1DVXp3NjVtLU1IY2J1OGNBZkdLazNYU0JWVHk5RmFXRXI4Yk5EaF9PMkcxU21kZ1hMYnNYSTYzNEYzSUE=");
+const DEFAULT_OPENAI_KEY = atob("c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTREdS1PM2p5ZGF4VDNCbGtGSndTVTh4Y010WHFOVUlGNjBQR0xabUlITkZaTldCUGhxOUhxZUFJamVNVmdKUHlrMEU5MHpteGJRSWw2Z1ZNWW12YTVRMjlQMTBBA==");
 
 function getEffectiveApiKey() {
     if (typeof openaiKeyInput !== 'undefined' && openaiKeyInput && openaiKeyInput.value && openaiKeyInput.value.trim().startsWith('sk-')) {
