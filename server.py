@@ -66,7 +66,8 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             text = query.get('text', [''])[0]
             voice = query.get('voice', ['alloy'])[0]
             raw_key = self.headers.get('X-OpenAI-Key', '').strip()
-            api_key = raw_key if (raw_key and raw_key.startswith('sk-')) else get_saved_api_key()
+            server_key = get_saved_api_key()
+            api_key = server_key or (raw_key if (raw_key and raw_key.startswith('sk-')) else '')
             
             if text:
                 try:

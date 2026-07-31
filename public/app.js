@@ -42,6 +42,10 @@ function getSelectedVoiceName() {
 }
 
 function getEffectiveApiKey() {
+    // When the server has a configured key, never let a stale browser key override it.
+    if (serverHasApiKey) {
+        return '';
+    }
     if (typeof openaiKeyInput !== 'undefined' && openaiKeyInput && openaiKeyInput.value && openaiKeyInput.value.trim().startsWith('sk-')) {
         return openaiKeyInput.value.trim();
     }

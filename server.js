@@ -50,7 +50,8 @@ app.get('/api/tts', async (req, res) => {
     const text = req.query.text || '';
     const voice = req.query.voice || 'shimmer';
     const rawKey = (req.get('X-OpenAI-Key') || '').trim();
-    const apiKey = (rawKey && rawKey.startsWith('sk-')) ? rawKey : getSavedApiKey();
+    const serverKey = getSavedApiKey();
+    const apiKey = serverKey || ((rawKey && rawKey.startsWith('sk-')) ? rawKey : '');
 
     if (!text) {
         return res.status(400).send("Missing 'text' parameter");
