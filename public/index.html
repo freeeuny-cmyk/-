@@ -391,7 +391,43 @@
         </div>
     </div>
 
+    <!-- Mobile Download & Save Modal -->
+    <div id="mobile-download-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(6px); padding: 16px; box-sizing: border-box;">
+        <div style="background: #ffffff; width: 100%; max-width: 440px; max-height: 90vh; border-radius: 20px; padding: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.35); position: relative; overflow-y: auto; box-sizing: border-box;">
+            <button type="button" id="btn-close-mobile-modal" style="position: absolute; top: 16px; right: 16px; background: #f3f4f6; border: none; font-size: 20px; width: 32px; height: 32px; border-radius: 50%; color: #4b5563; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
+            
+            <div style="font-size: 32px; color: #10b981; margin-bottom: 8px;">
+                <i class="fa-solid fa-mobile-screen"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 6px;">📱 스마트폰 동영상 저장 안내</h3>
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px; line-height: 1.4;">스마트폰(아이폰/갤러시) 갤러리에 영상을 저장해보세요.</p>
+
+            <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px; margin-bottom: 16px;">
+                <video id="mobile-modal-video" controls playsinline loop style="width: 100%; max-height: 240px; border-radius: 10px; background: #000; object-fit: contain;"></video>
+                <p style="font-size: 12px; color: #059669; font-weight: 600; margin-top: 8px; margin-bottom: 0;">
+                    💡 <b>꿀팁</b>: 영상 화면을 1~2초간 <b>꾹 누르면(길게 터치)</b> 바로 <b>'동영상 저장'</b>이 됩니다!
+                </p>
+            </div>
+
+            <div style="text-align: left; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #065f46; line-height: 1.5;">
+                <strong style="display: block; font-size: 14px; margin-bottom: 4px; color: #047857;">📌 저장 방법</strong>
+                1️⃣ <b>[공유/갤러리 저장 창 열기]</b> 버튼 ➡️ <b>'비디오 저장'</b> 또는 <b>'갤러리 저장'</b> 선택<br>
+                2️⃣ 버튼 동작이 안 될 경우 <b>위 영상 화면을 길게 눌러 직접 저장</b><br>
+                3️⃣ 카카오톡 내부 화면인 경우 우측 상단 <b>[ ⋮ ] -> '다른 브라우저로 열기'</b> 후 저장
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button type="button" id="btn-share-mobile" class="btn btn-success" style="width: 100%; justify-content: center; padding: 12px; font-size: 15px; font-weight: 700; border-radius: 12px;">
+                    <i class="fa-solid fa-share-nodes"></i> <span>공유 / 갤러리에 저장하기</span>
+                </button>
+                <button type="button" id="btn-open-tab" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; font-size: 14px; border-radius: 12px;">
+                    <i class="fa-solid fa-up-right-from-square"></i> <span>새 탭에서 동영상 크게 열기</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Script Entry -->
-    <script src="app.js?v=20260728_v700_paid_voice_fixed"></script>
+    <script src="app.js?v=20260731_v800_mobile_download_fix"></script>
 </body>
 </html>

@@ -388,6 +388,35 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Mobile Video Download & Save Modal Listeners
+    const btnCloseMobileModal = document.getElementById('btn-close-mobile-modal');
+    const mobileModal = document.getElementById('mobile-download-modal');
+    const btnShareMobile = document.getElementById('btn-share-mobile');
+    const btnOpenTab = document.getElementById('btn-open-tab');
+
+    if (btnCloseMobileModal && mobileModal) {
+        btnCloseMobileModal.addEventListener('click', () => {
+            mobileModal.style.display = 'none';
+        });
+    }
+    if (mobileModal) {
+        mobileModal.addEventListener('click', (e) => {
+            if (e.target === mobileModal) {
+                mobileModal.style.display = 'none';
+            }
+        });
+    }
+    if (btnShareMobile) {
+        btnShareMobile.addEventListener('click', triggerMobileShare);
+    }
+    if (btnOpenTab) {
+        btnOpenTab.addEventListener('click', () => {
+            if (generatedVideoUrl) {
+                window.open(generatedVideoUrl, '_blank');
+            }
+        });
+    }
 }
 
 // Standalone Audio Preview State
@@ -1943,22 +1972,106 @@ function togglePreviewPlayback() {
     }
 }
 
-// Download the final generated video file matching the recorded audio/video codec format
-function downloadVideo() {
-    if (!generatedVideoUrl) return;
-    
-    const a = document.createElement('a');
-    a.href = generatedVideoUrl;
-    
-    // Save file name with current timestamp matching recorded format (.mp4 or .webm)
+// Helper: Show Mobile Video Save Guidance Modal
+function showMobileDownloadModal() {
+    const modal = document.getElementById('mobile-download-modal');
+    const modalVideo = document.getElementById('mobile-modal-video');
+    if (!modal) return;
+
+    if (modalVideo && generatedVideoUrl) {
+        modalVideo.src = generatedVideoUrl;
+    }
+    modal.style.display = 'flex';
+}
+
+// Trigger Web Share API for native mobile file saving (iOS Photos / Android Gallery)
+async function triggerMobileShare() {
+    if (!generatedVideoBlob || !generatedVideoUrl) {
+        alert('생성된 동영상이 없습니다. 먼저 동영상을 생성해주세요.');
+        return false;
+    }
+
     const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
     let ext = 'mp4';
     if (recordedMimeType && recordedMimeType.toLowerCase().includes('webm')) {
         ext = 'webm';
     }
-    a.download = `GBAN_Shortform_${dateStr}.${ext}`;
-    
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const fileName = `GBAN_Shortform_${dateStr}.${ext}`;
+    const mimeType = generatedVideoBlob.type || (ext === 'webm' ? 'video/webm' : 'video/mp4');
+
+    try {
+        const videoFile = new File([generatedVideoBlob], fileName, { type: mimeType });
+
+        if (navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+            await navigator.share({
+                files: [videoFile],
+                title: 'GBAN 숏폼 동영상',
+                text: '경상북도농업기술원 AI 숏폼 퀵스튜디오에서 생성된 숏폼 영상입니다.'
+            });
+            return true;
+        }
+    } catch (err) {
+        console.log('Mobile share result/status:', err);
+        if (err.name !== 'AbortError') {
+            alert('스마트폰 저장 창을 여는 중 문제가 발생했습니다.\n아래 [영상 길게 터치] 방법으로 저장해 보세요.');
+        }
+    }
+    return false;
+}
+
+// Download/Save the final generated video file with full mobile OS support
+async function downloadVideo() {
+    if (!generatedVideoUrl || !generatedVideoBlob) {
+        alert('생성된 동영상이 없습니다. 숏폼 동영상 제작 후 다시 시도해 주세요.');
+        return;
+    }
+
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isInAppBrowser = /KAKAOTALK|NAVER|Line|FB_IAB|Instagram/i.test(navigator.userAgent);
+
+    const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    let ext = 'mp4';
+    if (recordedMimeType && recordedMimeType.toLowerCase().includes('webm')) {
+        ext = 'webm';
+    }
+    const fileName = `GBAN_Shortform_${dateStr}.${ext}`;
+    const mimeType = generatedVideoBlob.type || (ext === 'webm' ? 'video/webm' : 'video/mp4');
+
+    // 1. Try Web Share API (Primary mobile path for saving video directly to iOS Photos / Android Gallery)
+    if (isMobile) {
+        try {
+            const videoFile = new File([generatedVideoBlob], fileName, { type: mimeType });
+            if (navigator.canShare && navigator.canShare({ files: [videoFile] })) {
+                await navigator.share({
+                    files: [videoFile],
+                    title: 'GBAN 숏폼 동영상',
+                    text: '경상북도농업기술원 AI 숏폼 퀵스튜디오 동영상입니다.'
+                });
+                return;
+            }
+        } catch (shareErr) {
+            console.log('Mobile native share bypassed or canceled:', shareErr);
+            if (shareErr.name === 'AbortError') {
+                showMobileDownloadModal();
+                return;
+            }
+        }
+    }
+
+    // 2. Standard browser download link fallback
+    try {
+        const a = document.createElement('a');
+        a.href = generatedVideoUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } catch (e) {
+        console.error("Direct download link trigger error:", e);
+    }
+
+    // 3. Display mobile save modal for mobile / in-app browsers as guided helper
+    if (isMobile || isInAppBrowser) {
+        showMobileDownloadModal();
+    }
 }
