@@ -27,7 +27,15 @@ let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 let serverHasApiKey = false;
 
-const DEFAULT_OPENAI_KEY = atob("c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTREdS1PM2p5ZGF4VDNCbGtGSndTVTh4Y010WHFOVUlGNjBQR0xabUlITkZaTldCUGhxOUhxZUFJamVNVmdKUHlrMEU5MHpteGJRSWw2Z1ZNWW12YTVRMjlQMTBBA==");
+let DEFAULT_OPENAI_KEY = '';
+try {
+    const rawB64Key = "c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTREdS1PM2p5ZGF4VDNCbGtGSndTVTh4Y010WHFOVUlGNjBQR0xabUlITkZaTldCUGhxOUhxZUFJamVNVmdKUHlrMEU5MHpteGJRSWw2Z1ZNWW12YTVRMjlQMTBBA==";
+    const stdB64Key = rawB64Key.replace(/-/g, '+').replace(/_/g, '/');
+    DEFAULT_OPENAI_KEY = atob(stdB64Key.trim());
+} catch (e) {
+    console.warn("OpenAI default key decode warning:", e);
+    DEFAULT_OPENAI_KEY = '';
+}
 
 function getEffectiveApiKey() {
     if (typeof openaiKeyInput !== 'undefined' && openaiKeyInput && openaiKeyInput.value && openaiKeyInput.value.trim().startsWith('sk-')) {
