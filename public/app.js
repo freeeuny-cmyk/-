@@ -26,15 +26,19 @@ let recordedMimeType = '';
 let slidesData = []; // Combined images and scripts for rendering
 let totalVideoDuration = 0; // Total duration of the video in seconds
 let serverHasApiKey = false;
+const OPENAI_TTS_VOICES = new Set(['shimmer', 'nova', 'alloy', 'onyx', 'echo', 'fable']);
+let voicePreviewRequestId = 0;
+let voicePreviewAbortController = null;
 
-let DEFAULT_OPENAI_KEY = '';
-try {
-    const rawB64Key = "c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTRNRHUtTzNqeWRheFQzQmxia0ZKd1NVOHhjTXRYcU5VSUY2MFBHTFptSUhORVpOV0JQaHE5SHFlQUlqZU1WZ0pQeWswRTkwem14YlFJbDZnVk1ZbXZhNVEyOVAxMEE=";
-    const stdB64Key = rawB64Key.replace(/-/g, '+').replace(/_/g, '/');
-    DEFAULT_OPENAI_KEY = atob(stdB64Key.trim());
-} catch (e) {
-    console.warn("OpenAI default key decode warning:", e);
-    DEFAULT_OPENAI_KEY = '';
+function isOpenAiVoice(voice) {
+    return OPENAI_TTS_VOICES.has(voice);
+}
+
+function getSelectedVoiceName() {
+    if (!voiceSelect || voiceSelect.selectedIndex < 0) return 'AI 목소리';
+    const selectedText = voiceSelect.options[voiceSelect.selectedIndex].text || 'AI 목소리';
+    const match = selectedText.match(/\(([^-–—)]+)/);
+    return match ? match[1].trim() : selectedText.split('(')[0].trim();
 }
 
 function getEffectiveApiKey() {
@@ -45,18 +49,17 @@ function getEffectiveApiKey() {
     if (savedKey && savedKey.trim().startsWith('sk-')) {
         return savedKey.trim();
     }
-    return DEFAULT_OPENAI_KEY;
+    return '';
 }
 
 function checkServerApiKey() {
     fetch('/api/check_key')
         .then(r => r.json())
         .then(data => {
-            if (data && data.has_key) {
-                serverHasApiKey = true;
-                if (openaiKeyContainer) {
-                    openaiKeyContainer.style.display = 'none';
-                }
+            serverHasApiKey = Boolean(data && data.has_key);
+            if (openaiKeyContainer && voiceSelect) {
+                const isPaidVoice = isOpenAiVoice(voiceSelect.value);
+                openaiKeyContainer.style.display = (!serverHasApiKey && isPaidVoice) ? 'flex' : 'none';
             }
         })
         .catch(() => {});
@@ -215,8 +218,8 @@ function setupEventListeners() {
     if (voiceSelect) {
         voiceSelect.addEventListener('change', () => {
             if (openaiKeyContainer) {
-                const isPaidVoice = ['shimmer', 'nova', 'alloy', 'onyx', 'echo', 'fable'].includes(voiceSelect.value);
-                openaiKeyContainer.style.display = isPaidVoice ? 'flex' : 'none';
+                const isPaidVoice = isOpenAiVoice(voiceSelect.value);
+                openaiKeyContainer.style.display = (!serverHasApiKey && isPaidVoice) ? 'flex' : 'none';
             }
             stopAllAudioPreviews();
         });
@@ -231,8 +234,8 @@ function setupEventListeners() {
         openaiKeyInput.placeholder = "기본 내장 API Key 자동 적용 완료 (입력하지 않아도 됩니다)";
     }
     if (openaiKeyContainer && voiceSelect) {
-        const isPaidVoice = ['shimmer', 'nova', 'alloy', 'onyx', 'echo', 'fable'].includes(voiceSelect.value);
-        openaiKeyContainer.style.display = isPaidVoice ? 'flex' : 'none';
+        const isPaidVoice = isOpenAiVoice(voiceSelect.value);
+        openaiKeyContainer.style.display = (!serverHasApiKey && isPaidVoice) ? 'flex' : 'none';
     }
 
     // Real-time API Key saving to localStorage
@@ -563,26 +566,47 @@ async function toggleVoicePreview() {
 
     let apiKey = getEffectiveApiKey();
     const sampleText = getScriptSentences()[0] || '안녕하세요! 경상북도농업기술원 숏폼 AI 목소리 샘플입니다.';
+    const selectedVoiceName = getSelectedVoiceName();
+    const requestId = ++voicePreviewRequestId;
+    if (voicePreviewAbortController) {
+        voicePreviewAbortController.abort();
+    }
+    voicePreviewAbortController = new AbortController();
+    const requestSignal = voicePreviewAbortController.signal;
 
     isVoicePreviewPlaying = true;
     if (btnPreviewVoice) {
         btnPreviewVoice.classList.add('loading');
-        btnPreviewVoice.querySelector('span').innerText = '음성 생성 중...';
+        btnPreviewVoice.querySelector('span').innerText = `${selectedVoiceName} 생성 중...`;
         btnPreviewVoice.querySelector('i').className = 'fa-solid fa-spinner fa-spin';
     }
 
     const speed = parseFloat(voiceSpeed ? voiceSpeed.value : 1.0);
-    const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
+    const keyHeaders = apiKey ? { 'X-OpenAI-Key': apiKey } : {};
     let arrayBuffer = null;
 
     try {
-        const response = await fetch(`/api/tts?text=${encodeURIComponent(sampleText)}${keyParam}`);
+        const response = await fetch(`/api/tts?text=${encodeURIComponent(sampleText)}&voice=${encodeURIComponent(voice)}`, {
+            headers: keyHeaders,
+            signal: requestSignal
+        });
         if (response.ok) {
-            arrayBuffer = await response.arrayBuffer();
+            const provider = response.headers.get('X-TTS-Provider');
+            if (isOpenAiVoice(voice) && provider !== 'openai') {
+                console.warn(`Requested ${voice}, but server returned ${provider || 'unknown provider'}.`);
+            } else {
+                arrayBuffer = await response.arrayBuffer();
+            }
         }
-    } catch (e) {}
+    } catch (e) {
+        if (e && e.name !== 'AbortError') {
+            console.warn('Voice preview server request failed:', e);
+        }
+    }
 
-    if (!arrayBuffer && voice !== 'google' && voice !== 'none' && apiKey) {
+    if (requestId !== voicePreviewRequestId || requestSignal.aborted) return;
+
+    if (!arrayBuffer && isOpenAiVoice(voice) && apiKey) {
         try {
             const openAiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
                 method: 'POST',
@@ -594,23 +618,37 @@ async function toggleVoicePreview() {
                     model: 'tts-1',
                     input: sampleText,
                     voice: voice
-                })
+                }),
+                signal: requestSignal
             });
             if (openAiResponse.ok) {
                 arrayBuffer = await openAiResponse.arrayBuffer();
             }
-        } catch (oaiErr) {}
+        } catch (oaiErr) {
+            if (oaiErr && oaiErr.name !== 'AbortError') {
+                console.warn('Direct OpenAI voice preview failed:', oaiErr);
+            }
+        }
     }
 
-    if (!arrayBuffer && voice !== 'none') {
+    if (requestId !== voicePreviewRequestId || requestSignal.aborted) return;
+
+    // A free voice is used only when the user explicitly selected it.
+    if (!arrayBuffer && voice === 'google') {
         try {
             const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${encodeURIComponent(sampleText)}`;
-            const gResp = await fetch(googleUrl);
+            const gResp = await fetch(googleUrl, { signal: requestSignal });
             if (gResp.ok) {
                 arrayBuffer = await gResp.arrayBuffer();
             }
-        } catch (ge) {}
+        } catch (ge) {
+            if (ge && ge.name !== 'AbortError') {
+                console.warn('Google voice preview failed:', ge);
+            }
+        }
     }
+
+    if (requestId !== voicePreviewRequestId || requestSignal.aborted) return;
 
     if (btnPreviewVoice) {
         btnPreviewVoice.classList.remove('loading');
@@ -618,6 +656,9 @@ async function toggleVoicePreview() {
 
     if (!arrayBuffer || !isVoicePreviewPlaying) {
         stopVoicePreview();
+        if (isOpenAiVoice(voice)) {
+            alert(`선택한 OpenAI 음성(${selectedVoiceName})을 생성하지 못했습니다.\n무료 음성으로 자동 전환하지 않았습니다.\n\n잠시 후 다시 시도하거나 OpenAI API 결제 잔액과 Key 상태를 확인해 주세요.`);
+        }
         return;
     }
 
@@ -632,7 +673,7 @@ async function toggleVoicePreview() {
             voiceCtx.decodeAudioData(bufferCopy, resolve, () => resolve(null));
         });
 
-        if (!decodedBuffer || !isVoicePreviewPlaying) {
+        if (!decodedBuffer || !isVoicePreviewPlaying || requestId !== voicePreviewRequestId) {
             stopVoicePreview();
             return;
         }
@@ -650,7 +691,7 @@ async function toggleVoicePreview() {
 
         if (btnPreviewVoice) {
             btnPreviewVoice.classList.add('playing');
-            btnPreviewVoice.querySelector('span').innerText = '목소리 정지';
+            btnPreviewVoice.querySelector('span').innerText = `${selectedVoiceName} 재생 중`;
             btnPreviewVoice.querySelector('i').className = 'fa-solid fa-square';
         }
 
@@ -667,6 +708,11 @@ async function toggleVoicePreview() {
 }
 
 function stopVoicePreview() {
+    voicePreviewRequestId += 1;
+    if (voicePreviewAbortController) {
+        voicePreviewAbortController.abort();
+        voicePreviewAbortController = null;
+    }
     if (previewAudioElementVoice && previewAudioElementVoice.ctx) {
         try { previewAudioElementVoice.ctx.close(); } catch(e) {}
     }
@@ -1317,21 +1363,21 @@ async function generateShortsVideo() {
 
             // Call TTS backend or direct OpenAI API fallback
             const speed = parseFloat(voiceSpeed.value);
-            const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
+            const keyHeaders = apiKey ? { 'X-OpenAI-Key': apiKey } : {};
             let arrayBuffer = null;
 
             // Step 1: Try server endpoint `/api/tts`
             try {
-                const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
+                const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}&voice=${encodeURIComponent(voice)}`, {
+                    headers: keyHeaders
+                });
                 if (response.ok) {
                     const provider = response.headers.get('X-TTS-Provider');
-                    if (provider === 'google_fallback' && voice !== 'google' && voice !== 'none' && !window.openaiQuotaAlertShown) {
-                        window.openaiQuotaAlertShown = true;
-                        setTimeout(() => {
-                            alert('⚠️ [유료 AI 목소리 안내]\n\n입력/기본 저장된 OpenAI API Key의 결제 잔액이 소진되어(credit_balance_exhausted) 무료 목소리로 안전하게 자동 전환되었습니다.\n\n유료 목소리를 생성하시려면 충전된 새로운 OpenAI API Key를 [OpenAI API Key 설정] 칸에 입력해 주세요.');
-                        }, 500);
+                    if (isOpenAiVoice(voice) && provider !== 'openai') {
+                        console.warn(`Requested ${voice}, but server returned ${provider || 'unknown provider'}.`);
+                    } else {
+                        arrayBuffer = await response.arrayBuffer();
                     }
-                    arrayBuffer = await response.arrayBuffer();
                 }
             } catch (e) {
                 console.warn('/api/tts backend unavailable, attempting direct fallbacks...', e);
@@ -1363,8 +1409,8 @@ async function generateShortsVideo() {
                 }
             }
 
-            // Step 3: Universal Server Fallback Proxy (Guarantees mobile TTS works without CORS errors)
-            if (!arrayBuffer && voice !== 'none') {
+            // Step 3: Use the free voice only when it was explicitly selected.
+            if (!arrayBuffer && voice === 'google') {
                 try {
                     const fallbackResp = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}&voice=google`);
                     if (fallbackResp.ok) {
@@ -1373,6 +1419,10 @@ async function generateShortsVideo() {
                 } catch (ge) {
                     console.warn('Fallback server TTS fetch failed:', ge);
                 }
+            }
+
+            if (!arrayBuffer && isOpenAiVoice(voice)) {
+                throw new Error('OPENAI_TTS_UNAVAILABLE');
             }
 
             let originalBuffer = null;
@@ -1394,7 +1444,7 @@ async function generateShortsVideo() {
                 }
             }
 
-            // Fallback 2: Safe Silence Buffer so video generation ALWAYS succeeds smoothly
+            // Silence is safe only for intentionally silent or unavailable non-OpenAI audio.
             if (!originalBuffer) {
                 originalBuffer = audioContext.createBuffer(1, Math.floor(audioContext.sampleRate * userDuration), audioContext.sampleRate);
             }
@@ -1599,6 +1649,8 @@ async function generateShortsVideo() {
         const detailMessage = (err && err.message) ? err.message : String(err);
         if (detailMessage === 'OPENAI_KEY_REQUIRED') {
             alert('오픈AI 고품질 목소리를 사용하시려면 OpenAI API Key를 입력하셔야 합니다.\n(무료 음성을 사용하시려면 목소리 선택에서 "기본 여성 목소리(무료)"를 선택해 주세요.)');
+        } else if (detailMessage === 'OPENAI_TTS_UNAVAILABLE') {
+            alert('선택한 OpenAI 음성을 생성하지 못해 동영상 제작을 중단했습니다.\n무료 목소리로 자동 전환하지 않았습니다.\n\nOpenAI API 결제 잔액과 Key 상태를 확인한 뒤 다시 시도해 주세요.');
         } else {
             alert(`동영상 제작 도중 오류가 발생했습니다.\n\n[오류 원인]: ${detailMessage}\n\n(문제가 지속되는 경우 '기본 여성 목소리(무료)' 선택 후 다시 시도해 보세요.)`);
         }

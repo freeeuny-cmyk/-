@@ -7,8 +7,6 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 const DIRECTORY = path.join(__dirname, 'public');
 
-const DEFAULT_KEY_B64 = "c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTRNRHUtTzNqeWRheFQzQmxia0ZKd1NVOHhjTXRYcU5VSUY2MFBHTFptSUhORVpOV0JQaHE5SHFlQUlqZU1WZ0pQeWswRTkwem14YlFJbDZnVk1ZbXZhNVEyOVAxMEE=";
-
 function getSavedApiKey() {
     if (process.env.OPENAI_API_KEY) {
         return process.env.OPENAI_API_KEY.trim();
@@ -32,30 +30,26 @@ function getSavedApiKey() {
             } catch (e) {}
         }
     }
-    try {
-        return Buffer.from(DEFAULT_KEY_B64, 'base64').toString('utf-8').trim();
-    } catch (e) {
-        return '';
-    }
+    return '';
 }
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, OPTIONS, POST');
-    res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type');
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, X-OpenAI-Key');
     res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
     next();
 });
 
 app.get('/api/check_key', (req, res) => {
     const key = getSavedApiKey();
-    res.json({ has_key: !!key, key: key });
+    res.json({ has_key: !!key });
 });
 
 app.get('/api/tts', async (req, res) => {
     const text = req.query.text || '';
     const voice = req.query.voice || 'shimmer';
-    const rawKey = (req.query.key || '').trim();
+    const rawKey = (req.get('X-OpenAI-Key') || '').trim();
     const apiKey = (rawKey && rawKey.startsWith('sk-')) ? rawKey : getSavedApiKey();
 
     if (!text) {

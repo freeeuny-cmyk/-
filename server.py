@@ -6,11 +6,9 @@ import os
 import sys
 import json
 
-import base64
-
 PORT = int(os.environ.get('PORT', 8000))
-DIRECTORY = "public"
-DEFAULT_KEY_B64 = "c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTRNRHUtTzNqeWRheFQzQmxia0ZKd1NVOHhjTXRYcU5VSUY2MFBHTFptSUhORVpOV0JQaHE5SHFlQUlqZU1WZ0pQeWswRTkwem14YlFJbDZnVk1ZbXZhNVEyOVAxMEE="
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DIRECTORY = os.path.join(BASE_DIR, "public")
 
 def get_saved_api_key():
     env_key = os.environ.get('OPENAI_API_KEY', '')
@@ -18,9 +16,10 @@ def get_saved_api_key():
         return env_key.strip()
     possible_files = ['.env', 'key.txt', 'api_key.txt', 'secret.txt', 'openai_key.txt']
     for fname in possible_files:
-        if os.path.exists(fname):
+        key_path = os.path.join(BASE_DIR, fname)
+        if os.path.exists(key_path):
             try:
-                with open(fname, 'r', encoding='utf-8') as f:
+                with open(key_path, 'r', encoding='utf-8-sig') as f:
                     for line in f:
                         s = line.strip()
                         if not s or s.startswith('#'):
@@ -31,11 +30,7 @@ def get_saved_api_key():
                             return s
             except Exception:
                 pass
-    try:
-        return base64.b64decode(DEFAULT_KEY_B64).decode('utf-8').strip()
-    except Exception as e:
-        sys.stderr.write(f"Key decode error: {e}\n")
-        return ''
+    return ''
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -46,7 +41,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Enable CORS headers for development/canvas capture
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, X-OpenAI-Key')
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         self.send_header('Pragma', 'no-cache')
         self.send_header('Expires', '0')
@@ -63,14 +58,14 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({'has_key': True, 'key': get_saved_api_key()}).encode('utf-8'))
+            self.wfile.write(json.dumps({'has_key': bool(get_saved_api_key())}).encode('utf-8'))
             return
 
         if parsed_url.path == '/api/tts':
             query = urllib.parse.parse_qs(parsed_url.query)
             text = query.get('text', [''])[0]
             voice = query.get('voice', ['alloy'])[0]
-            raw_key = query.get('key', [''])[0].strip()
+            raw_key = self.headers.get('X-OpenAI-Key', '').strip()
             api_key = raw_key if (raw_key and raw_key.startswith('sk-')) else get_saved_api_key()
             
             if text:

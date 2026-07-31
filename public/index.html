@@ -228,12 +228,12 @@
                         <div class="setting-group">
                             <label for="voice-select">AI 목소리 선택 (TTS)</label>
                             <select id="voice-select">
-                                <option value="shimmer" selected>기본 여성 목소리 1 (시머 - 맑고 밝은 톤)</option>
-                                <option value="nova">기본 여성 목소리 2 (노바 - 따뜻하고 차분한 톤)</option>
-                                <option value="alloy">여성/중성 목소리 3 (알로이 - 차분하고 균형 잡힌 톤)</option>
-                                <option value="onyx">남성 목소리 1 (오닉스 - 신뢰감 있는 중저음)</option>
-                                <option value="echo">남성 목소리 2 (에코 - 지적이고 또렷한 톤)</option>
-                                <option value="fable">남성 목소리 3 (페이블 - 활기찬 톤)</option>
+                                <option value="shimmer" selected>OpenAI 여성 1 (시머 - 맑고 밝은 톤)</option>
+                                <option value="nova">OpenAI 여성 2 (노바 - 따뜻하고 차분한 톤)</option>
+                                <option value="alloy">OpenAI 여성/중성 3 (알로이 - 차분하고 균형 잡힌 톤)</option>
+                                <option value="onyx">OpenAI 남성 1 (오닉스 - 신뢰감 있는 중저음)</option>
+                                <option value="echo">OpenAI 남성 2 (에코 - 지적이고 또렷한 톤)</option>
+                                <option value="fable">OpenAI 남성 3 (페이블 - 활기찬 톤)</option>
                                 <option value="google">구글 기본 목소리 (무료 / 중저음 톤)</option>
                                 <option value="none">음성 없음 (자막과 음악만)</option>
                             </select>
@@ -248,7 +248,7 @@
                         </div>
 
                         <!-- OpenAI API Key Input -->
-                        <div class="setting-group" id="openai-key-container" style="grid-column: span 2;">
+                        <div class="setting-group" id="openai-key-container" style="grid-column: span 2; display: none;">
                             <label for="openai-key-input"><i class="fa-solid fa-key" style="color: #10b981; margin-right: 4px;"></i> OpenAI API Key 설정 (선택사항 - 미입력 시 기본 내장 Key 자동 사용)</label>
                             <div class="api-key-input-wrapper">
                                 <input type="password" id="openai-key-input" placeholder="기본 내장 Key 자동 적용 중 (직접 입력하지 않아도 됩니다)">
@@ -430,6 +430,6 @@
     <!-- HEIC Image Conversion Support -->
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <!-- Script Entry -->
-    <script src="app.js?v=20260731_v903_node_server_key_fix"></script>
+    <script src="app.js?v=20260731_v905_voice_preview_fix"></script>
 </body>
 </html>
