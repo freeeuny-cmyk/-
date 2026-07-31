@@ -284,13 +284,8 @@ function setupEventListeners() {
         });
     }
 
-    // Upload drag and drop & click
+    // Upload drag and drop
     if (uploadZone) {
-        uploadZone.addEventListener('click', (e) => {
-            if (fileInput && e.target !== fileInput) {
-                fileInput.click();
-            }
-        });
         uploadZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadZone.classList.add('dragover');
@@ -308,7 +303,6 @@ function setupEventListeners() {
     }
 
     if (fileInput) {
-        fileInput.addEventListener('click', (e) => e.stopPropagation());
         fileInput.addEventListener('change', handleFileSelect);
     }
 
@@ -736,8 +730,27 @@ function handleFileSelect(e) {
     if (e.target.files && e.target.files.length > 0) {
         processImageFiles(e.target.files);
     }
-    // Reset file input value to allow re-selecting same file
-    fileInput.value = '';
+}
+
+// Convert HEIC/HEIF images if heic2any is available
+async function convertHeicIfNeeded(file) {
+    const fileName = (file.name || '').toLowerCase();
+    const isHeic = fileName.endsWith('.heic') || fileName.endsWith('.heif') || (file.type && (file.type.includes('heic') || file.type.includes('heif')));
+    
+    if (isHeic && typeof heic2any !== 'undefined') {
+        try {
+            const convertedBlob = await heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.9
+            });
+            const finalBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+            return new File([finalBlob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+        } catch (err) {
+            console.warn('HEIC conversion warning for file:', file.name, err);
+        }
+    }
+    return file;
 }
 
 // Load and display selected images while preserving exact user selection order
@@ -745,33 +758,44 @@ async function processImageFiles(files) {
     if (!files || files.length === 0) return;
     
     const filesArray = Array.from(files);
+    if (infoDescription) {
+        infoDescription.innerText = `사진 ${filesArray.length}장을 읽는 중입니다...`;
+    }
+
+    // Reset file input value safely so user can re-select same file if needed
+    if (fileInput) fileInput.value = '';
     
     // Use Promise.all to load images concurrently while strictly keeping original selection order
-    const loadPromises = filesArray.map((file, index) => {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = function() {
-                    resolve({
-                        index: index,
-                        img: img,
-                        name: file.name || '사진',
-                        id: Date.now() + Math.random().toString(36).substr(2, 5)
-                    });
+    const loadPromises = filesArray.map(async (file, index) => {
+        try {
+            const processedFile = await convertHeicIfNeeded(file);
+            return await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        resolve({
+                            index: index,
+                            img: img,
+                            name: file.name || '사진',
+                            id: Date.now() + Math.random().toString(36).substr(2, 5)
+                        });
+                    };
+                    img.onerror = function(err) {
+                        console.warn('Failed to load image file:', file.name, err);
+                        resolve(null);
+                    };
+                    img.src = e.target.result;
                 };
-                img.onerror = function() {
-                    console.warn('Failed to load image file:', file.name);
+                reader.onerror = function() {
                     resolve(null);
                 };
-                img.src = e.target.result;
-            };
-            reader.onerror = function() {
-                resolve(null);
-            };
-            reader.readAsDataURL(file);
-        });
+                reader.readAsDataURL(processedFile);
+            });
+        } catch (err) {
+            console.error('Error reading image file:', file.name, err);
+            return null;
+        }
     });
 
     const loadedResults = await Promise.all(loadPromises);
@@ -780,6 +804,16 @@ async function processImageFiles(files) {
     const validResults = loadedResults.filter(item => item !== null);
     validResults.sort((a, b) => a.index - b.index);
     
+    if (validResults.length === 0 && filesArray.length > 0) {
+        alert('선택하신 이미지 파일 읽기에 실패했습니다.\nJPG, PNG, WEBP, HEIC 형식의 이미지 파일로 다시 시도해 보세요.');
+        if (images.length > 0) {
+            infoDescription.innerText = `사진 ${images.length}장이 준비되었습니다. 대본을 입력하고 동영상을 생성해 보세요!`;
+        } else {
+            infoDescription.innerText = '사진을 업로드하고 숏폼을 만들어보세요!';
+        }
+        return;
+    }
+
     validResults.forEach(item => {
         images.push({
             img: item.img,
