@@ -222,12 +222,13 @@ function setupEventListeners() {
         });
     }
 
-    // Load saved API key on startup or set default
+    // Load saved API key on startup or set default placeholder
     const savedKey = localStorage.getItem('openai_api_key');
     if (savedKey && openaiKeyInput) {
         openaiKeyInput.value = savedKey;
     } else if (openaiKeyInput) {
-        openaiKeyInput.value = DEFAULT_OPENAI_KEY;
+        openaiKeyInput.value = '';
+        openaiKeyInput.placeholder = "기본 내장 API Key 자동 적용 완료 (입력하지 않아도 됩니다)";
     }
     if (openaiKeyContainer && voiceSelect) {
         const isPaidVoice = ['shimmer', 'nova', 'alloy', 'onyx', 'echo', 'fable'].includes(voiceSelect.value);
