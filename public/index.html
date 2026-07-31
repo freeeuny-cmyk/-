@@ -248,8 +248,8 @@
                         </div>
 
                         <!-- OpenAI API Key Input -->
-                        <div class="setting-group" id="openai-key-container" style="display: none !important; grid-column: span 2;">
-                            <label for="openai-key-input">OpenAI API Key 입력 (모바일/웹 유료 목소리 사용 시 필수)</label>
+                        <div class="setting-group" id="openai-key-container" style="grid-column: span 2;">
+                            <label for="openai-key-input"><i class="fa-solid fa-key" style="color: #10b981; margin-right: 4px;"></i> OpenAI API Key 설정 (유료 목소리 사용 시 입력)</label>
                             <div class="api-key-input-wrapper">
                                 <input type="password" id="openai-key-input" placeholder="sk-proj-...">
                                 <button type="button" id="toggle-key-visibility" class="btn-icon-key" title="Key 번호 보기/숨기기">
@@ -262,7 +262,7 @@
                                     <input type="checkbox" id="save-key-checkbox" checked> 자동 저장
                                 </label>
                             </div>
-                            <span class="helper-text">* 모바일 및 웹에서 유료 AI 목소리(시머, 노바 등)를 사용하려면 OpenAI API Key(sk-...)를 입력해 주세요. (Key 입력 없이 '기본 여성 목소리(무료)' 선택 시 100% 무료 작동)</span>
+                            <span class="helper-text">* 모바일 및 웹에서 유료 AI 고품질 목소리(시머, 노바 등)를 사용하려면 내 OpenAI API Key(sk-...)를 입력할 수 있습니다. (Key 입력이 없는 경우 고품질 무료 목소리로 자동 변환하여 영상이 정상 생성됩니다.)</span>
                         </div>
                     </div>
 

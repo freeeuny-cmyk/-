@@ -207,13 +207,12 @@ function setupEventListeners() {
     if (voiceSelect) {
         voiceSelect.addEventListener('change', () => {
             if (openaiKeyContainer) {
-                openaiKeyContainer.style.display = 'none';
+                const isPaidVoice = ['shimmer', 'nova', 'alloy', 'onyx', 'echo', 'fable'].includes(voiceSelect.value);
+                openaiKeyContainer.style.display = isPaidVoice ? 'flex' : 'none';
             }
             stopAllAudioPreviews();
         });
     }
-
-
 
     // Load saved API key on startup or set default
     const savedKey = localStorage.getItem('openai_api_key');
@@ -222,8 +221,9 @@ function setupEventListeners() {
     } else if (openaiKeyInput) {
         openaiKeyInput.value = DEFAULT_OPENAI_KEY;
     }
-    if (openaiKeyContainer) {
-        openaiKeyContainer.style.display = 'none';
+    if (openaiKeyContainer && voiceSelect) {
+        const isPaidVoice = ['shimmer', 'nova', 'alloy', 'onyx', 'echo', 'fable'].includes(voiceSelect.value);
+        openaiKeyContainer.style.display = isPaidVoice ? 'flex' : 'none';
     }
 
     // Real-time API Key saving to localStorage
@@ -1271,11 +1271,12 @@ async function generateShortsVideo() {
                 localStorage.setItem('openai_api_key', apiKey);
             }
 
-            // Call TTS backend or direct OpenAI API fallback (for static hosting environments like GitHub Pages)
+            // Call TTS backend or direct OpenAI API fallback
             const speed = parseFloat(voiceSpeed.value);
             const keyParam = `&key=${encodeURIComponent(apiKey)}&voice=${voice}`;
             let arrayBuffer = null;
 
+            // Step 1: Try server endpoint `/api/tts`
             try {
                 const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
                 if (response.ok) {
@@ -1285,7 +1286,7 @@ async function generateShortsVideo() {
                 console.warn('/api/tts backend unavailable, attempting direct fallbacks...', e);
             }
 
-            // Direct OpenAI API call from client browser for static sites (GitHub Pages) when API key is present
+            // Step 2: Direct OpenAI API call from client browser for static hosting environments
             if (!arrayBuffer && voice !== 'google' && voice !== 'none' && apiKey) {
                 try {
                     const openAiResponse = await fetch('https://api.openai.com/v1/audio/speech', {
@@ -1311,16 +1312,15 @@ async function generateShortsVideo() {
                 }
             }
 
-            // Universal Fallback: If paid voice or API call fails or key is omitted, fallback to Google Translate TTS so voice NEVER fails
+            // Step 3: Universal Server Fallback Proxy (Guarantees mobile TTS works without CORS errors)
             if (!arrayBuffer && voice !== 'none') {
                 try {
-                    const googleUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ko&client=tw-ob&q=${encodeURIComponent(slide.text)}`;
-                    const gResp = await fetch(googleUrl);
-                    if (gResp.ok) {
-                        arrayBuffer = await gResp.arrayBuffer();
+                    const fallbackResp = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}&voice=google`);
+                    if (fallbackResp.ok) {
+                        arrayBuffer = await fallbackResp.arrayBuffer();
                     }
                 } catch (ge) {
-                    console.warn('Direct Google TTS fetch bypassed or blocked:', ge);
+                    console.warn('Fallback server TTS fetch failed:', ge);
                 }
             }
 
