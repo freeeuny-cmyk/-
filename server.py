@@ -75,6 +75,7 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
             if text:
                 try:
                     audio_data = None
+                    tts_success = False
                     if voice != 'google' and api_key:
                         try:
                             # OpenAI TTS API Call
@@ -96,9 +97,11 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                             )
                             with urllib.request.urlopen(req) as response:
                                 audio_data = response.read()
+                                tts_success = True
                         except Exception as oai_err:
                             sys.stderr.write(f"OpenAI TTS error: {oai_err}\n")
                             audio_data = None
+                            tts_success = False
 
                     if not audio_data:
                         # Fallback: Google Translate TTS URL
@@ -110,10 +113,12 @@ class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                         with urllib.request.urlopen(req) as response:
                             audio_data = response.read()
                         
+                    provider = "openai" if (voice != 'google' and tts_success) else "google_fallback"
                     if audio_data:
                         self.send_response(200)
                         self.send_header('Content-Type', 'audio/mpeg')
                         self.send_header('Access-Control-Allow-Origin', '*')
+                        self.send_header('X-TTS-Provider', provider)
                         self.end_headers()
                         self.wfile.write(audio_data)
                     else:

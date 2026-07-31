@@ -63,6 +63,7 @@ app.get('/api/tts', async (req, res) => {
     }
 
     let audioBuffer = null;
+    let isOpenAiSuccess = false;
 
     // 1. Try OpenAI TTS API if voice is not 'google' and apiKey is available
     if (voice !== 'google' && apiKey) {
@@ -87,6 +88,7 @@ app.get('/api/tts', async (req, res) => {
 
                 const request = https.request(options, (response) => {
                     if (response.statusCode === 200) {
+                        isOpenAiSuccess = true;
                         const chunks = [];
                         response.on('data', (chunk) => chunks.push(chunk));
                         response.on('end', () => resolve(Buffer.concat(chunks)));
@@ -135,8 +137,10 @@ app.get('/api/tts', async (req, res) => {
         }
     }
 
+    const provider = isOpenAiSuccess ? "openai" : "google_fallback";
     if (audioBuffer) {
         res.setHeader('Content-Type', 'audio/mpeg');
+        res.setHeader('X-TTS-Provider', provider);
         res.send(audioBuffer);
     } else {
         res.status(500).send("TTS fetch failed");

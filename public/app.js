@@ -1227,6 +1227,7 @@ async function generateShortsVideo() {
     // Check API Key requirement for paid OpenAI voices on mobile/web
     const voice = voiceSelect.value;
     let apiKey = openaiKeyInput.value.trim();
+    window.openaiQuotaAlertShown = false;
 
     // Show Loading/Rendering screen overlay
     renderingOverlay.style.display = 'flex';
@@ -1280,6 +1281,13 @@ async function generateShortsVideo() {
             try {
                 const response = await fetch(`/api/tts?text=${encodeURIComponent(slide.text)}${keyParam}`);
                 if (response.ok) {
+                    const provider = response.headers.get('X-TTS-Provider');
+                    if (provider === 'google_fallback' && voice !== 'google' && voice !== 'none' && !window.openaiQuotaAlertShown) {
+                        window.openaiQuotaAlertShown = true;
+                        setTimeout(() => {
+                            alert('⚠️ [유료 AI 목소리 안내]\n\n입력/기본 저장된 OpenAI API Key의 결제 잔액이 소진되어(credit_balance_exhausted) 무료 목소리로 안전하게 자동 전환되었습니다.\n\n유료 목소리를 생성하시려면 충전된 새로운 OpenAI API Key를 [OpenAI API Key 설정] 칸에 입력해 주세요.');
+                        }, 500);
+                    }
                     arrayBuffer = await response.arrayBuffer();
                 }
             } catch (e) {
