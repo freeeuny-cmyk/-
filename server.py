@@ -10,7 +10,7 @@ import base64
 
 PORT = int(os.environ.get('PORT', 8000))
 DIRECTORY = "public"
-DEFAULT_KEY_B64 = "c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTREdS1PM2p5ZGF4VDNCbGtGSndTVTh4Y010WHFOVUlGNjBQR0xabUlITkZaTldCUGhxOUhxZUFJamVNVmdKUHlrMEU5MHpteGJRSWw2Z1ZNWW12YTVRMjlQMTBBA=="
+DEFAULT_KEY_B64 = "c2stcHJvai1jQi14aHJpRFQ4RUNySkhSeVRkYmZFeDZORDFVNU5uVXFmLVVPSndZcHYxQVNLa1R1M18yX3RBUlpJZ0pUZTRNRHUtTzNqeWRheFQzQmxia0ZKd1NVOHhjTXRYcU5VSUY2MFBHTFptSUhORVpOV0JQaHE5SHFlQUlqZU1WZ0pQeWswRTkwem14YlFJbDZnVk1ZbXZhNVEyOVAxMEE="
 
 def get_saved_api_key():
     env_key = os.environ.get('OPENAI_API_KEY', '')
@@ -33,7 +33,8 @@ def get_saved_api_key():
                 pass
     try:
         return base64.b64decode(DEFAULT_KEY_B64).decode('utf-8').strip()
-    except Exception:
+    except Exception as e:
+        sys.stderr.write(f"Key decode error: {e}\n")
         return ''
 
 class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
