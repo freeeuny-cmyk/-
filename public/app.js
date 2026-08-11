@@ -17,7 +17,7 @@ let btnGenerate, btnPreviewPlay, btnDownload, renderingOverlay, loadingStatus;
 let progressBarFill, progressPercentage, infoDescription, playOverlayBtn;
 let btnPreviewBgm, btnPreviewVoice, btnPreviewAll;
 let subtitlePosition, subtitleColorPreset, customColorContainer, subtitleColor, subtitleColorVal;
-let subtitleSize, subtitleSizeVal, slideDuration, slideDurationVal;
+let subtitleSize, subtitleSizeVal, slideDuration, slideDurationVal, logoOverlayOption;
 
 // Video Generation Variables
 let generatedVideoBlob = null;
@@ -109,6 +109,7 @@ function initDomElements() {
     subtitleSizeVal = subtitleSize ? subtitleSize.nextElementSibling : null;
     slideDuration = document.getElementById('slide-duration');
     slideDurationVal = slideDuration ? slideDuration.nextElementSibling : null;
+    logoOverlayOption = document.getElementById('logo-overlay-option');
 }
 
 // Preload Official Gyeongsangbuk-do Emblem Logo & Slogan Images for Video Canvas
@@ -357,6 +358,11 @@ function setupEventListeners() {
     if (slideDuration) {
         slideDuration.addEventListener('input', () => {
             if (slideDurationVal) slideDurationVal.innerText = `${parseFloat(slideDuration.value).toFixed(1)}초`;
+            updateLivePreview();
+        });
+    }
+    if (logoOverlayOption) {
+        logoOverlayOption.addEventListener('change', () => {
             updateLivePreview();
         });
     }
@@ -1876,6 +1882,13 @@ function renderFrameAtTime(time) {
 
 // Render Fixed Institution Watermark & Official Logo/Slogan on Shortform Video Canvas
 function drawFixedWatermark(ctx) {
+    const logoOption = (logoOverlayOption && logoOverlayOption.value) ? logoOverlayOption.value : 'all';
+
+    // 🚫 If user selected "로고 없음", skip drawing watermarks/logos completely
+    if (logoOption === 'none') {
+        return;
+    }
+
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
@@ -1887,7 +1900,7 @@ function drawFixedWatermark(ctx) {
     ctx.shadowOffsetY = 1.5;
 
     // 1. Top-Right Slogan Watermark ("경북의 힘!으로 새로운 대한민국")
-    if (gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
+    if ((logoOption === 'all' || logoOption === 'slogan_only') && gbSloganImg.complete && gbSloganImg.naturalWidth !== 0) {
         const sloganHeight = 48;
         const sloganWidth = Math.round(sloganHeight * (gbSloganImg.naturalWidth / gbSloganImg.naturalHeight));
         const sloganX = canvas.width - sloganWidth - 36;
@@ -1941,6 +1954,7 @@ function drawFixedWatermark(ctx) {
     }
 
     // 2. Bottom-Center Institution Watermark (Official Blue Wave Logo + "경상북도농업기술원")
+    if (logoOption === 'all' || logoOption === 'logo_only') {
     const watermarkY = canvas.height - 65;
     const logoText = "경상북도농업기술원";
 
@@ -1983,6 +1997,7 @@ function drawFixedWatermark(ctx) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(logoText, textX, watermarkY);
+    }
 
     ctx.restore();
 }
