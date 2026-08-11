@@ -1142,8 +1142,8 @@ function getScriptSentences() {
     const sentences = [];
     
     rawLines.forEach(line => {
-        // Strip list number prefixes like "1. ", "1) ", "- ", "• "
-        let trimmed = line.trim().replace(/^(\d+[\.\)]|[-•*])\s*/, '');
+        // Strip list number prefixes like "1. ", "1) ", "- ", "• " (only 1-2 digit list numbers followed by space, avoiding dates like 2026.)
+        let trimmed = line.trim().replace(/^(\d{1,2}[\.\)]\s+|[-•*]\s*)/, '');
         if (trimmed.length > 0) {
             sentences.push(trimmed);
         }
